@@ -1,0 +1,100 @@
+@import "tailwindcss";
+
+body {
+  background-color: #0c0b0b;
+}
+/* ================= FOOTBALL 3D ================= */
+
+.football-3d-container {
+  perspective: 1000px;
+}
+
+.football-3d {
+  width: 150px;
+  height: 150px;
+  transform-style: preserve-3d;
+  filter: drop-shadow(0 25px 25px rgba(0, 0, 0, 0.7));
+}
+
+@keyframes footballDance {
+  0% {
+    transform: rotateX(0deg) rotateY(0deg) translateY(0);
+  }
+  25% {
+    transform: rotateX(20deg) rotateY(90deg) translateY(-15px);
+  }
+  50% {
+    transform: rotateX(-20deg) rotateY(180deg) translateY(0);
+  }
+  75% {
+    transform: rotateX(15deg) rotateY(270deg) translateY(-10px);
+  }
+  100% {
+    transform: rotateX(0deg) rotateY(360deg) translateY(0);
+  }
+}
+
+.animate-football-dance {
+  animation: footballDance 2s ease-in-out infinite;
+}
+
+.football-glow-ring {
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 215, 0, 0.7), transparent 70%);
+  filter: blur(10px);
+  animation: glowPulse 1.8s infinite;
+}
+
+@keyframes glowPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+/* ================= PARTICLES ================= */
+
+.win-particle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  animation: particleFly 900ms ease-out forwards;
+}
+
+@keyframes particleFly {
+  to {
+    transform: translate(var(--dx), var(--dy));
+    opacity: 0;
+  }
+}
+
+/* ================= TEXT ================= */
+
+.win-text-glow {
+  text-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
+}
+
+/* ================= SYMBOL ANIMATIONS ================= */
+
+@keyframes bounceZoom {
+  0%,
+  100% {
+    transform: scale(1.1);
+  }
+  50% {
+    transform: scale(1.25);
+  }
+}
+
+.animate-bounce-zoom {
+  animation: bounceZoom 1s infinite;
+}
