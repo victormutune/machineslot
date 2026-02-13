@@ -10,6 +10,7 @@ interface ControlPanelProps {
   onDecreaseBet: () => void;
   onBuyBonus: () => void;
   onToggleAutoSpin: () => void;
+  onOpenPaytable: () => void;
 }
 
 export default function SlotControlPanel({
@@ -21,7 +22,8 @@ export default function SlotControlPanel({
   onIncreaseBet,
   onDecreaseBet,
   onBuyBonus,
-  onToggleAutoSpin
+  onToggleAutoSpin,
+  onOpenPaytable
 }: ControlPanelProps) {
 
   return (
@@ -80,7 +82,10 @@ export default function SlotControlPanel({
             {/* Bottom Row: Info - Coins - Menu */}
             <div className="flex items-center justify-between w-full px-6 mb-2">
                 {/* Info (Left) - Using PayTable logic if available or placeholder */}
-                <button className="w-14 h-8 rounded-full border border-white/20 bg-black/40 flex items-center justify-center text-white italic font-serif hover:bg-white/10">
+                <button 
+                    onClick={onOpenPaytable} 
+                    className="w-14 h-8 rounded-full border border-white/20 bg-black/40 flex items-center justify-center text-white italic font-serif hover:bg-white/10"
+                >
                     i
                 </button>
 
@@ -142,7 +147,10 @@ export default function SlotControlPanel({
                 {/* Left Section: Menu & Balance */}
                 <div className="flex items-center gap-6 pl-8">
                     {/* Menu Icon */}
-                    <button className="text-white hover:text-gray-300 transition">
+                    <button 
+                        onClick={onOpenPaytable}
+                        className="text-white hover:text-gray-300 transition"
+                    >
                         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                             <line x1="4" y1="12" x2="20" y2="12"></line>
                             <line x1="4" y1="6" x2="20" y2="6"></line>
@@ -158,7 +166,9 @@ export default function SlotControlPanel({
                 </div>
 
                 {/* Spacer */}
-                <div className="flex-1"></div>
+                <div className="flex-1">
+                    
+                </div>
 
                 {/* Right Section: Bet & Spin Controls */}
                 <div className="flex items-center gap-4 pr-18">

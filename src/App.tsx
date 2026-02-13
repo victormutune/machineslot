@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { ASSETS, SYMBOLS, REEL_STRIP, BONUS_REEL_STRIP } from './assets/assetMap';
+import { ASSETS, REEL_STRIPS, BONUS_REEL_STRIPS } from './assets/assetMap';
 import SlotMachine, { type SlotMachineHandle } from './components/SlotMachine';
 import ControlPanel from './components/ControlPanel';
 import GoldenFrame from './components/ui/GoldenFrame';
@@ -14,24 +14,24 @@ function App() {
   // --- Game State ---
   const [balance, setBalance] = useState(10000);
   const [currentBet, setCurrentBet] = useState(100);
-  const [lastWin, setLastWin] = useState(0);
+  const [, setLastWin] = useState(0);
   const [winResult, setWinResult] = useState<WinResult | null>(null);
   const [lastStopIndices, setLastStopIndices] = useState<number[]>([]);
   const [isSpinning, setIsSpinning] = useState(false);
-  const [spinCount, setSpinCount] = useState(5);
+  const [spinCount] = useState(5);
   // Free Spins State
   const [freeSpinsRemaining, setFreeSpinsRemaining] = useState(0);
   const [lastFreeSpinsWon, setLastFreeSpinsWon] = useState(0);
   const [buyBonusOpen, setBuyBonusOpen] = useState(false);
   const [autoSpinEnabled, setAutoSpinEnabled] = useState(false);
-  const [autoSpinRemaining, setAutoSpinRemaining] = useState<number | null>(null);
+  const [, setAutoSpinRemaining] = useState<number | null>(null);
   const [autoSpinModalOpen, setAutoSpinModalOpen] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string>('GRADIATOR');
-  // Boost
-  const [boostActive, setBoostActive] = useState(false);
+  const [payTableOpen, setPayTableOpen] = useState(false);
+  const [boostActive] = useState(false);
   
   // Bonus/Logic State
-  const [currentStrip, setCurrentStrip] = useState<number[]>(REEL_STRIP); // Track which strip is active
+  const [currentStrips, setCurrentStrips] = useState<number[][]>(REEL_STRIPS); // Track which strips are active
   const bonusStartBetMultiplierRef = useRef<number>(1);
 
   // Ref to the slot machine to trigger spins
@@ -55,9 +55,7 @@ function App() {
     setCurrentBet(prev => Math.max(10, prev - 10)); 
   };
 
-  const changeSpinCount = (value: number) => {
-    setSpinCount(value);
-  };
+
 
   const startAutoSpin = (count: number | null) => {
     autoSpinRef.current = true;
@@ -78,9 +76,7 @@ function App() {
     setAutoSpinEnabled(false);
   };
 
-  const toggleBoost = () => {
-    setBoostActive(prev => !prev);
-  };
+
 
   /**
    * Called when the Spin Button is clicked in ControlPanel.
@@ -94,8 +90,8 @@ function App() {
     const isFreeSpin = freeSpinsRemaining > 0;
     
     // Select Strip based on Free Spin Status
-    const activeStrip = isFreeSpin ? BONUS_REEL_STRIP : REEL_STRIP;
-    setCurrentStrip(activeStrip); // Update UI/Logic state
+    const activeStrips = isFreeSpin ? BONUS_REEL_STRIPS : REEL_STRIPS;
+    setCurrentStrips(activeStrips); // Update UI/Logic state
 
     const effectiveBetMultiplier = isFreeSpin ? bonusStartBetMultiplierRef.current : 1;
     const effectiveBet = currentBet * effectiveBetMultiplier;
@@ -113,12 +109,16 @@ function App() {
       setLastWin(0); 
       setIsSpinning(true);
 
-      // 1. Generate Random Results (Stop Indices 0-activeStrip.length for each reel)
-      const stopIndices = Array(5).fill(0).map(() => Math.floor(Math.random() * activeStrip.length));
+      // 1. Generate Random Results (Stop Indices 0-length for each reel)
+      const stopIndices = activeStrips.map(strip => Math.floor(Math.random() * strip.length));
       setLastStopIndices(stopIndices);
 
-      // 2. Calculate the Result IMMEDIATELY using the ACTIVE STRIP
-      const result = calculateWin(stopIndices, effectiveBet, activeStrip);
+      // 2. Calculate the Result IMMEDIATELY using the ACTIVE STRIPS
+      const result = calculateWin(stopIndices, effectiveBet, activeStrips);
+      
+      // ✅ Use adjustedStopIndices (from anti-dry logic) if available, else original
+      const finalStopIndices = result.adjustedStopIndices || stopIndices;
+      
       pendingWinRef.current = result.totalWin;
       pendingWinResultRef.current = result;
       pendingFreeSpinsRef.current = result.freeSpins || 0;
@@ -128,7 +128,9 @@ function App() {
 
       // 3. Trigger the Animation
       if (slotMachineRef.current) {
-        slotMachineRef.current.spin(stopIndices, spinCount);
+        // Use the FINAL indices for the visual spin
+        slotMachineRef.current.spin(finalStopIndices, spinCount);
+        setLastStopIndices(finalStopIndices); // Update state with final positions
       }
     } else {
       alert("Insufficient Funds!");
@@ -236,16 +238,11 @@ function App() {
     >
 
 
-      {/* 0. GAME TITLE */}
-      <div className="mb-4 text-center">
-        <h1 className="text-7xl font-bold text-yellow-800 tracking-wider graffiti-title">
-          
-        </h1>
-      </div>
+     
 
       {/* 1. SLOT MACHINE BOARD */}
       <div className="flex items-stretch justify-center w-full max-w-[1400px]">
-        {/* SidebarSpinControl Removed */}
+        
 
         <div className="w-[90%] lg:w-[60%] max-w-[1250px] relative">
             <GoldenFrame width="100%" maxWidth="100%" isBonus={freeSpinsRemaining > 0}>
@@ -254,7 +251,7 @@ function App() {
                 onSpinComplete={handleSpinComplete}
                 boostActive={boostActive}
                 winResult={winResult}
-                reelStrip={currentStrip}
+                reelStrips={currentStrips}
                 />
                 <WinEffects winResult={winResult} stopIndices={lastStopIndices} freeSpinsWon={lastFreeSpinsWon} />
             </GoldenFrame>
@@ -276,6 +273,7 @@ function App() {
         onDecreaseBet={decreaseBet}
         onBuyBonus={() => setBuyBonusOpen(true)}
         onToggleAutoSpin={() => autoSpinModalOpen ? setAutoSpinModalOpen(false) : (autoSpinEnabled ? stopAutoSpin() : setAutoSpinModalOpen(true))}
+        onOpenPaytable={() => setPayTableOpen(true)}
       />
 
       <BuyBonusModal
@@ -305,6 +303,11 @@ function App() {
         open={autoSpinModalOpen}
         onClose={() => setAutoSpinModalOpen(false)}
         onSelect={startAutoSpin}
+      />
+
+      <PayTableModal
+        open={payTableOpen}
+        onClose={() => setPayTableOpen(false)}
       />
 
     </div>

@@ -1,131 +1,97 @@
-import { useMemo, useState, useRef, useImperativeHandle, forwardRef } from 'react';
-import Reel, { type ReelHandle } from './Reel'; 
-import { SYMBOLS, REEL_STRIP } from '../assets/assetMap';
+import React, { useRef, useImperativeHandle, forwardRef } from 'react';
+import Reel, { type ReelHandle } from './Reel';
+import WinEffects from './WinEffects';
 import { type WinResult } from '../utils/winLogic';
+import { getReelWinningRows, hasAnyWin } from '../utils/winningHelper';
+import { REEL_STRIPS } from '../assets/assetMap';
 
-// Props
+export interface SlotMachineHandle {
+  spin: (stopIndices: number[], spins?: number, reelOrders?: number[][]) => void;
+}
+
 interface SlotMachineProps {
-  onSpinComplete: () => void;
-  reelOrders?: number[][]; // [reelIndex][symbolIndex] -> symbolId
+  onSpinComplete?: () => void;
   boostActive?: boolean;
   winResult: WinResult | null;
-  reelStrip?: number[];
+  reelStrips?: number[][]; // Changed to array of arrays
 }
 
-// Handle Interface
-export interface SlotMachineHandle {
-  spin: (results: number[], spinCount: number, reelOrders?: number[][]) => void;
-}
-
-const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>(({ onSpinComplete, boostActive = false, winResult, reelStrip = REEL_STRIP }, ref) => {
-  const [spinning, setSpinning] = useState(false);
-  const [activeOrders, setActiveOrders] = useState<number[][]>(() => {
-    // Use the weighted REEL_STRIP (or provided strip) for all 5 reels
-    return Array.from({ length: 5 }, () => reelStrip);
-  });
+const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>(({
+  onSpinComplete,
+  boostActive = false,
+  winResult,
+  reelStrips = REEL_STRIPS,
+}, ref) => {
   
-  // Update active orders when reelStrip changes (e.g. entering/leaving bonus)
-  useMemo(() => {
-     setActiveOrders(Array.from({ length: 5 }, () => reelStrip));
-  }, [reelStrip]);
-  
-  // Refs for the 5 reels
-  const reelsRef = useRef<(ReelHandle | null)[]>([]);
-  const baseIds = useMemo(() => SYMBOLS.map((s) => s.id), []);
+  const [isSpinning, setIsSpinning] = React.useState(false);
+  const [currentStopIndices, setCurrentStopIndices] = React.useState<number[]>([0, 0, 0, 0, 0]);
 
-  // Calculate winning positions from winResult
-  const winningPositions = useMemo(() => {
-    // 5 reels x 4 rows
-    const grid = Array(5).fill(null).map(() => Array(4).fill(false));
-
-    if (winResult) {
-      winResult.winningLines.forEach(line => {
-        if (line.path) {
-          line.path.forEach(pos => {
-            if (grid[pos.col] && grid[pos.col][pos.row] !== undefined) {
-              grid[pos.col][pos.row] = true;
-            }
-          });
-        }
-      });
-    }
-    return grid;
-  }, [winResult]);
+  const reelRefs = [
+    useRef<ReelHandle>(null),
+    useRef<ReelHandle>(null),
+    useRef<ReelHandle>(null),
+    useRef<ReelHandle>(null),
+    useRef<ReelHandle>(null),
+  ];
 
   useImperativeHandle(ref, () => ({
-    spin: (results: number[], spinCount: number, reelOrders?: number[][]) => {
-      if (spinning) return;
-      setSpinning(true);
-      if (reelOrders?.length === 5) setActiveOrders(reelOrders);
+    spin: (stopIndices: number[], spinCount: number = 5) => {
+      if (isSpinning) return;
+      setIsSpinning(true);
+      setCurrentStopIndices(stopIndices);
 
-      // Apply boost multiplier to speed up spin: 0.5x speed = 2x duration reduction
-      const boostMultiplier = boostActive ? 0.5 : 1;
-      
-      reelsRef.current.forEach((reel, i) => {
-        if (reel) {
-          // Sequential delay logic
-          // Reel 1: 0s, Reel 2: 0.4s, etc.
-          const stopDelay = i * 0.10 * boostMultiplier; 
-          
-          // We pass:
-          // 1. Base spin count (plus i*2 to make the later ones spin 'more' visually before stopping)
-          // 2. The result index
-          // 3. The explicit stop delay (reduced by boost multiplier)
-          reel.spin(spinCount + i * 2, results[i], stopDelay, boostMultiplier);
+      // Trigger spins on all reels
+      reelRefs.forEach((reelRef, index) => {
+        if (reelRef.current) {
+           const delay = index * 0.1; // Staggered start
+           
+           reelRef.current.spin(
+             spinCount + (index * 0.5), // Add some randomness/stagger to spin count
+             stopIndices[index],
+             delay,
+             boostActive ? 2 : 1 // Faster if boost is active
+           );
         }
       });
 
-      // Calculate the exact duration of the last reel (index 4)
-      const lastReelIndex = 4;
-      const lastReelStopDelay = lastReelIndex * 0.10 * boostMultiplier;
-      
-      // Part 1: Spin Loop Duration
-      // (spinCount + i * 2) * (0.15 * boostMultiplier)
-      // Note: gsap repeat counts the *repeats*, so actual plays is repeat + 1 usually, 
-      // but here repeat: spins means it plays 'spins' + 1 times?
-      // Let's verify standard GSAP behavior. repeat: 1 plays twice.
-      // In Reel.tsx: repeat: spins. So total iterations = spins + 1.
-      // Wait, let's look at Reel.tsx loop duration again.
-      // it says duration: 0.15 * boostMultiplier.
-      // if repeat is N, total time is duration * (N + 1).
-      // Let's assume the previous manual calcs were slightly off if they ignored the +1.
-      // Reel.tsx: spinCount passed is (spinCount + i * 2).
-      // So loop duration = (0.15 * boostMultiplier) * (spinCount + lastReelIndex * 2 + 1).
-      
-      // Part 2: Landing Duration
-      // (1.5 + stopDelay) * boostMultiplier
-      const landingDuration = (1.5 + lastReelStopDelay) * boostMultiplier;
-      
-      const loopDuration = (0.15 * boostMultiplier) * (spinCount + lastReelIndex * 2 + 1);
-      
-      const totalDurationSec = loopDuration + landingDuration;
-      const timeoutDuration = (totalDurationSec * 1000) + 100; // +100ms buffer
-      
+      // Calculate total duration roughly
+      // (base spins * duration) + (landing delay)
+      const baseDuration = (spinCount + 4) * 0.15; // approximate
+      const landingDelay = 1.0; 
+      const totalTime = (baseDuration + landingDelay) * 1000 + 500; // + buffer
+
       setTimeout(() => {
-        setSpinning(false);
-        onSpinComplete();
-      }, timeoutDuration);
+        setIsSpinning(false);
+        if (onSpinComplete) onSpinComplete();
+      }, totalTime);
     }
   }));
 
+  // Winning rows for highlighting
+  const reelWinningRows = getReelWinningRows(winResult);
+  const hasWin = hasAnyWin(winResult);
+
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center relative"> 
-      {/* Reels Container */}
-      <div className="flex justify-center items-center w-full h-full overflow-hidden">
-        {/* Render 5 reels */}
-        {[0, 1, 2, 3, 4].map((i) => (
-          <Reel 
-            key={i}
-            ref={(el) => (reelsRef.current[i] = el)} 
-            rows={4} 
-            order={activeOrders[i] ?? baseIds}
-            winningRows={winningPositions[i]}
-            isSpinning={spinning}
+    <div className="relative w-full h-full flex flex-col items-center justify-center">
+      <div className="reels-grid grid grid-cols-5 gap-1 w-full h-full"> 
+        {reelRefs.map((reelRef, index) => (
+          <Reel
+            key={index}
+            ref={reelRef}
+            rows={4}
+            order={reelStrips[index]} // Use the individual strip for this reel
+            winningRows={reelWinningRows[index]}
+            isSpinning={isSpinning}
+            hasAnyWin={hasWin}
           />
         ))}
       </div>
-      
-      {/* Spin Button REMOVED - Moved to ControlPanel */}
+
+      <WinEffects
+        winResult={winResult}
+        stopIndices={currentStopIndices}
+        freeSpinsWon={winResult?.freeSpins ?? 0}
+      />
     </div>
   );
 });

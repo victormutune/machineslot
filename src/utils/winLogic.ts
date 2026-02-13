@@ -1,4 +1,4 @@
-import { SYMBOLS, REEL_STRIP } from '../assets/assetMap';
+import { SYMBOLS } from '../assets/assetMap';
 
 /* ================= TYPES ================= */
 
@@ -6,6 +6,8 @@ export interface WinResult {
   totalWin: number;
   winningLines: WinningLine[];
   freeSpins: number;
+  adjustedStopIndices: number[]; // ✅ ADDED - Return actual indices used
+  winningPositions: WinningPosition[][]; // ✅ ADDED - Per-reel winning positions
 }
 
 export interface WinningLine {
@@ -15,6 +17,11 @@ export interface WinningLine {
   winAmount: number;
   ways: number;
   path?: { col: number; row: number }[];
+}
+
+export interface WinningPosition {
+  col: number;
+  row: number;
 }
 
 /* ================= CONSTANTS ================= */
@@ -37,26 +44,30 @@ const PAYLINES: number[][] = [
   [1, 0, 1, 0, 1],
   [2, 3, 2, 3, 2],
   [3, 2, 3, 2, 3],
-  [0, 2, 0, 2, 0],
-  [2, 0, 2, 0, 2],
-  [1, 3, 1, 3, 1],
-  [3, 1, 3, 1, 3],
+  [0, 1, 2, 3, 2],
+  [2, 1, 2, 1, 2],
+  [1, 2, 1, 2, 1],
+  [2, 1, 2, 1, 2],
 ];
+
+/* ================= GRID ================= */
+/* grid[col][row] = symbol.id */
 
 /* ================= GRID ================= */
 /* grid[col][row] = symbol.id */
 
 export const getVisibleGrid = (
   stopIndices: number[],
-  reelStrip: number[] = REEL_STRIP
+  reelStrips: number[][]
 ): number[][] => {
   const grid: number[][] = [];
 
   for (let col = 0; col < COLS; col++) {
     const reel: number[] = [];
+    const strip = reelStrips[col];
     for (let row = 0; row < ROWS; row++) {
-      const index = (stopIndices[col] + row) % reelStrip.length;
-      reel.push(reelStrip[index]);
+      const index = (stopIndices[col] + row) % strip.length;
+      reel.push(strip[index]);
     }
     grid.push(reel);
   }
@@ -69,11 +80,12 @@ export const getVisibleGrid = (
 const calculateOnce = (
   stopIndices: number[],
   bet: number,
-  reelStrip: number[]
+  reelStrips: number[][]
 ): WinResult => {
 
-  const grid = getVisibleGrid(stopIndices, reelStrip);
+  const grid = getVisibleGrid(stopIndices, reelStrips);
   const winningLines: WinningLine[] = [];
+  const allWinningPositions = new Set<string>(); // ✅ ADDED - Track all winning positions
 
   let totalWin = 0;
   let freeSpins = 0;
@@ -88,9 +100,15 @@ const calculateOnce = (
   /* ===== SCATTER COUNT (ANYWHERE) ===== */
 
   let scatterCount = 0;
+  const scatterPositions: WinningPosition[] = []; // ✅ ADDED
+  
   for (let c = 0; c < COLS; c++) {
     for (let r = 0; r < ROWS; r++) {
-      if (grid[c][r] === SCATTER_ID) scatterCount++;
+      if (grid[c][r] === SCATTER_ID) {
+        scatterCount++;
+        scatterPositions.push({ col: c, row: r }); // ✅ ADDED
+        allWinningPositions.add(`${c},${r}`); // ✅ ADDED
+      }
     }
   }
 
@@ -112,7 +130,8 @@ const calculateOnce = (
       symbolName: SCATTER?.name ?? 'Scatter',
       count: scatterCount,
       winAmount: scatterWin,
-      ways: 1
+      ways: 1,
+      path: scatterPositions // ✅ ADDED - Include scatter positions
     });
   }
 
@@ -143,17 +162,43 @@ const calculateOnce = (
     const winAmount = symbol.value * multiplier * lineBet;
     totalWin += winAmount;
 
+    const path = line.slice(0, match).map((row, col) => ({ col, row }));
+    
+    // ✅ ADDED - Track winning positions
+    path.forEach(pos => {
+      allWinningPositions.add(`${pos.col},${pos.row}`);
+    });
+
     winningLines.push({
       symbolId: symbol.id,
       symbolName: symbol.name,
       count: match,
       winAmount,
       ways: 1,
-      path: line.slice(0, match).map((row, col) => ({ col, row }))
+      path
     });
   });
 
-  return { totalWin, winningLines, freeSpins };
+  // ✅ ADDED - Convert winning positions to per-reel format
+  const winningPositions: WinningPosition[][] = [];
+  for (let col = 0; col < COLS; col++) {
+    const colWinners: WinningPosition[] = [];
+    for (let row = 0; row < ROWS; row++) {
+      if (allWinningPositions.has(`${col},${row}`)) {
+        colWinners.push({ col, row });
+      }
+    }
+    winningPositions.push(colWinners);
+  }
+
+  // ✅ FIXED - Return with new fields
+  return { 
+    totalWin, 
+    winningLines, 
+    freeSpins,
+    adjustedStopIndices: stopIndices,
+    winningPositions 
+  };
 };
 
 /* ================= HIT CONTROL (ANTI-DRY SPINS) ================= */
@@ -161,24 +206,31 @@ const calculateOnce = (
 export const calculateWin = (
   stopIndices: number[],
   bet: number,
-  reelStrip: number[] = REEL_STRIP
+  reelStrips: number[][]
 ): WinResult => {
 
   let attempts = 0;
   let result: WinResult;
+  let finalStopIndices = stopIndices; // ✅ ADDED - Track which indices are used
 
   do {
     const adjustedStops =
       attempts === 0
         ? stopIndices
-        : stopIndices.map(
-            s => (s + Math.floor(Math.random() * 3) + 1) % reelStrip.length
-          );
+        : stopIndices.map((s, col) => {
+            const stripLength = reelStrips[col].length;
+            return (s + Math.floor(Math.random() * 3) + 1) % stripLength;
+          });
 
-    result = calculateOnce(adjustedStops, bet, reelStrip);
+    result = calculateOnce(adjustedStops, bet, reelStrips);
+    finalStopIndices = adjustedStops; // ✅ ADDED - Save the indices that were used
     attempts++;
 
   } while (result.totalWin === 0 && attempts < 3); // 🔥 soft guarantee
 
-  return result;
+  // ✅ FIXED - Return with actual stop indices used
+  return {
+    ...result,
+    adjustedStopIndices: finalStopIndices
+  };
 };

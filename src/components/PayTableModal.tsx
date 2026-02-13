@@ -1,4 +1,4 @@
-import { ASSETS } from '../assets/assetMap';
+import { SYMBOLS } from '../assets/assetMap';
 
 interface PayTableModalProps {
   open: boolean;
@@ -34,36 +34,40 @@ const PayTableModal = ({ open, onClose }: PayTableModalProps) => {
                 <div className="space-y-4">
                      {/* High Value Symbols */}
                      <div className="flex items-center gap-4 bg-black/20 p-2 rounded">
-                        <img src={ASSETS.symbols.s1} alt="Wild" className="w-12 h-12 object-contain" />
+                        <img src={SYMBOLS[0].image} alt="Wild" className="w-12 h-12 object-contain" />
                         <div>
-                            <p className="font-bold text-yellow-300">WILD</p>
+                            <p className="font-bold text-yellow-300">WILD (Yellowcard)</p>
                             <p className="text-sm">Substitutes for all symbols except Scatter</p>
                         </div>
                      </div>
                       <div className="flex items-center gap-4 bg-black/20 p-2 rounded">
-                        <img src={ASSETS.symbols.s2} alt="Scatter" className="w-12 h-12 object-contain" />
+                        <img src={SYMBOLS[4].image} alt="Scatter" className="w-12 h-12 object-contain" />
                         <div>
-                            <p className="font-bold text-blue-300">SCATTER</p>
+                            <p className="font-bold text-blue-300">SCATTER (Football)</p>
                             <p className="text-sm">3+ Scatters logic triggers Free Spins</p>
                         </div>
                      </div>
                      
                      <div className="grid grid-cols-2 gap-2 text-sm">
                         <div className="bg-black/20 p-2 rounded">
-                             <img src={ASSETS.symbols.s3} alt="Symbol 3" className="w-8 h-8 mx-auto mb-1" />
+                             <img src={SYMBOLS[8].image} alt="Trophy" className="w-8 h-8 mx-auto mb-1" />
+                             <div className="text-center">5x: 80.00</div>
+                         </div>
+                        <div className="bg-black/20 p-2 rounded">
+                             <img src={SYMBOLS[6].image} alt="K" className="w-8 h-8 mx-auto mb-1" />
+                             <div className="text-center">5x: 60.00</div>
+                        </div>
+                         <div className="bg-black/20 p-2 rounded">
+                             <img src={SYMBOLS[1].image} alt="A" className="w-8 h-8 mx-auto mb-1" />
                              <div className="text-center">5x: 50.00</div>
                         </div>
                          <div className="bg-black/20 p-2 rounded">
-                             <img src={ASSETS.symbols.s4} alt="Symbol 4" className="w-8 h-8 mx-auto mb-1" />
-                             <div className="text-center">5x: 25.00</div>
-                        </div>
-                         <div className="bg-black/20 p-2 rounded">
-                             <img src={ASSETS.symbols.s5} alt="Symbol 5" className="w-8 h-8 mx-auto mb-1" />
-                             <div className="text-center">5x: 15.00</div>
+                             <img src={SYMBOLS[7].image} alt="Glove" className="w-8 h-8 mx-auto mb-1" />
+                             <div className="text-center">5x: 40.00</div>
                         </div>
                           <div className="bg-black/20 p-2 rounded">
-                             <img src={ASSETS.symbols.s6} alt="Symbol 6" className="w-8 h-8 mx-auto mb-1" />
-                             <div className="text-center">5x: 10.00</div>
+                             <img src={SYMBOLS[9].image} alt="Whistle" className="w-8 h-8 mx-auto mb-1" />
+                             <div className="text-center">5x: 25.00</div>
                         </div>
                      </div>
 

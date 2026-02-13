@@ -96,68 +96,7 @@ const WinEffects: React.FC<WinEffectsProps> = ({
         </div>
       )}
 
-      {/* ================= PAYLINES (DISABLED) ================= */}
-      {/* 
-      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
-        {winResult.winningLines.map((line, index) => {
-          if (!line.path || line.path.length < 2) return null;
-          const colors = ['#FFD700', '#FF4500', '#00FF00', '#00BFFF', '#FF1493'];
-          
-          // Helper to get center coordinates
-          const getCenter = (col: number, row: number) => ({
-            x: ((col + 0.5) / 5) * 100,
-            y: ((row + 0.5) / 4) * 100
-          });
-
-          const pathPoints = line.path.map(p => getCenter(p.col, p.row));
-
-          // Calculate extended start
-          const p0 = pathPoints[0];
-          const p1 = pathPoints[1];
-          // Slope from p0 to p1
-          const dx0 = p1.x - p0.x;
-          const dy0 = p1.y - p0.y;
-          // We want to extend backwards (left)
-          // Cell half-width is 10. We extend by 10 to touch the edge.
-          const slope0 = dx0 !== 0 ? dy0 / dx0 : 0;
-          const offset = 10;
-          const startX = p0.x - offset;
-          const startY = p0.y - (slope0 * offset);
-
-          // Calculate extended end
-          const pn = pathPoints[pathPoints.length - 1];
-          const pn_1 = pathPoints[pathPoints.length - 2];
-          const dxN = pn.x - pn_1.x;
-          const dyN = pn.y - pn_1.y;
-          const slopeN = dxN !== 0 ? dyN / dxN : 0;
-          // Extend forward (right)
-          const endX = pn.x + offset;
-          const endY = pn.y + (slopeN * offset);
-          
-          const finalPoints = [
-            { x: startX, y: startY },
-            ...pathPoints,
-            { x: endX, y: endY }
-          ];
-
-          const pointsStr = finalPoints
-            .map(p => `${p.x},${p.y}`)
-            .join(' ');
-
-          return (
-            <polyline
-              key={index}
-              points={pointsStr}
-              fill="none"
-              stroke={colors[index % colors.length]}
-              strokeWidth={1.2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          );
-        })}
-      </svg>
-      */}
+     
 
       {/* ================= WIN TEXT ================= */}
       {winResult.totalWin > 0 && (

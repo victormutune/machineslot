@@ -27,26 +27,67 @@ export const SYMBOLS = [
   { id: 9, image: symWhistle, value: 25, name: "Whistle" },
 ];
 
-// Weighted Reel Strip (Total 60 positions)
-// Designed to make Footballs (Scatter) rare (~1 in 200 spins for 3+) and Wins balanced.
-export const REEL_STRIP = [
-  4, 0, 8, 6, 1, 7, 9, 2, 3, 5, // 0-9
-  5, 3, 2, 9, 7, 1, 6, 8, 0, 3, // 10-19
-  5, 3, 2, 9, 7, 1, 6, 8, 5, 3, // 20-29
-  2, 9, 7, 1, 6, 5, 3, 2, 9, 7, // 30-39
-  1, 5, 3, 2, 9, 4, 5, 3, 2, 5, // 40-49
-  3, 5, 7, 5, 3, 5, 3, 5, 5, 5  // 50-59 (Reduced scatters to 2)
+// Per-Reel Strips (5 separate reels)
+// Reel 1: Targeted mix (User request: "3 k 2 flag etc") -> More K (6) and Flag (3)
+// Scatter (4) is kept rare across all reels.
+
+const REEL_1 = [
+  6, 3, 6, 3, 1, 9, 2, 0, 7, 5, // High K(6) and Flag(3)
+  6, 2, 1, 9, 7, 0, 8, 5, 2, 9,
+  3, 6, 1, 7, 0, 8, 2, 5, 9, 1,
+  6, 3, 2, 7, 9, 0, 1, 5, 8, 2,
+  3, 6, 9, 1, 7, 2, 0, 5, 8, 1,
+  4, 6, 3, 1, 2, 9, 0, 7, 5, 8  // 1 Scatter
 ];
 
-// Bonus Reel Strip - Higher chance of High Value symbols (Yellowcard, Trophy, K) and Scatters
-export const BONUS_REEL_STRIP = [
-  4, 8, 6, 0, 8, 6, 0, 4, 8, 6, // Heavy on high value
-  0, 1, 7, 9, 2, 3, 5, 4, 8, 6, // Mix
-  4, 0, 8, 6, 1, 7, 9, 4, 8, 6, // More high value
-  0, 1, 7, 9, 2, 3, 5, 4, 0, 8, // Mix
-  6, 4, 8, 6, 0, 1, 7, 9, 2, 3, // High value end
-  5, 4, 8, 6, 0, 1, 7, 9, 4, 8  // High value end
+const REEL_2 = [
+  1, 9, 2, 8, 0, 7, 5, 6, 3, 2,
+  7, 0, 9, 1, 5, 8, 2, 6, 3, 0,
+  9, 2, 1, 7, 5, 0, 8, 6, 3, 9,
+  2, 7, 0, 1, 5, 8, 9, 6, 3, 2,
+  1, 9, 7, 0, 5, 2, 8, 6, 3, 1,
+  4, 0, 2, 7, 9, 1, 5, 8, 6, 3
 ];
+
+const REEL_3 = [
+  8, 0, 6, 2, 9, 1, 7, 3, 5, 0,
+  2, 9, 1, 7, 5, 8, 6, 3, 0, 2,
+  9, 1, 7, 5, 0, 8, 6, 3, 2, 9,
+  0, 2, 7, 1, 5, 9, 8, 6, 3, 0,
+  1, 7, 9, 2, 5, 8, 0, 6, 3, 1,
+  4, 2, 0, 7, 9, 1, 5, 8, 6, 3
+];
+
+const REEL_4 = [
+  5, 3, 7, 1, 9, 2, 0, 8, 6, 3,
+  7, 1, 9, 2, 0, 8, 6, 5, 3, 7,
+  1, 9, 2, 0, 8, 6, 5, 3, 7, 1,
+  9, 2, 0, 8, 6, 5, 3, 7, 1, 9,
+  2, 0, 8, 6, 5, 3, 7, 1, 9, 2,
+  4, 8, 0, 6, 2, 9, 1, 7, 3, 5
+];
+
+const REEL_5 = [
+  2, 7, 9, 1, 5, 0, 8, 6, 3, 2,
+  7, 9, 1, 5, 0, 8, 6, 3, 2, 7,
+  9, 1, 5, 0, 8, 6, 3, 2, 7, 9,
+  1, 5, 0, 8, 6, 3, 2, 7, 9, 1,
+  5, 0, 8, 6, 3, 2, 7, 9, 1, 5,
+  4, 6, 8, 0, 2, 7, 9, 1, 5, 3
+];
+
+export const REEL_STRIPS = [REEL_1, REEL_2, REEL_3, REEL_4, REEL_5];
+
+// Bonus Strips - Richer winning potential
+// Keeping similar structure but maybe more high value symbols (0, 6, 8)
+const BONUS_REEL_1 = [...REEL_1].map(s => (s === 1 || s === 9) ? 0 : s); // Replace some low with high
+const BONUS_REEL_2 = [...REEL_2].map(s => (s === 3 || s === 5) ? 6 : s);
+const BONUS_REEL_3 = [...REEL_3].map(s => (s === 2 || s === 7) ? 8 : s);
+const BONUS_REEL_4 = [...REEL_4].map(s => (s === 1 || s === 9) ? 0 : s);
+const BONUS_REEL_5 = [...REEL_5].map(s => (s === 3 || s === 5) ? 6 : s);
+
+export const BONUS_REEL_STRIPS = [BONUS_REEL_1, BONUS_REEL_2, BONUS_REEL_3, BONUS_REEL_4, BONUS_REEL_5];
+
 
 export const ASSETS = {
   background,
