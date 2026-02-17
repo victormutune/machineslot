@@ -77,19 +77,21 @@ export const getVisibleGrid = (
 
 /* ================= CORE CALCULATION ================= */
 
+/* ================= CORE CALCULATION ================= */
+
 const calculateOnce = (
   stopIndices: number[],
   bet: number,
-  reelStrips: number[][]
+  reelStrips: number[][],
+  isFreeSpin: boolean = false // ✅ ADDED - Prevent retriggers
 ): WinResult => {
 
   const grid = getVisibleGrid(stopIndices, reelStrips);
   const winningLines: WinningLine[] = [];
-  const allWinningPositions = new Set<string>(); // ✅ ADDED - Track all winning positions
+  const allWinningPositions = new Set<string>();
 
   let totalWin = 0;
   let freeSpins = 0;
-  const lineBet = bet / PAYLINES.length;
 
   // Scatter symbol
   const SCATTER = SYMBOLS.find(s =>
@@ -97,42 +99,46 @@ const calculateOnce = (
   );
   const SCATTER_ID = SCATTER?.id ?? -1;
 
-  /* ===== SCATTER COUNT (ANYWHERE) ===== */
-
-  let scatterCount = 0;
-  const scatterPositions: WinningPosition[] = []; // ✅ ADDED
-  
-  for (let c = 0; c < COLS; c++) {
-    for (let r = 0; r < ROWS; r++) {
-      if (grid[c][r] === SCATTER_ID) {
-        scatterCount++;
-        scatterPositions.push({ col: c, row: r }); // ✅ ADDED
-        allWinningPositions.add(`${c},${r}`); // ✅ ADDED
+  /* ===== SCATTER COUNT (ANYWHERE) - ONLY IF NOT FREE SPIN ===== */
+  if (!isFreeSpin) {
+    let scatterCount = 0;
+    const scatterPositions: WinningPosition[] = [];
+    
+    for (let c = 0; c < COLS; c++) {
+      for (let r = 0; r < ROWS; r++) {
+        if (grid[c][r] === SCATTER_ID) {
+          scatterCount++;
+          scatterPositions.push({ col: c, row: r });
+        }
       }
     }
-  }
 
-  if (scatterCount >= 3) {
-    const scatterWin =
-      scatterCount === 3 ? bet * 2 :
-      scatterCount === 4 ? bet * 5 :
-      bet * 10;
+    if (scatterCount >= 3) {
+      // Highlight winning scatters
+      scatterPositions.forEach(pos => {
+        allWinningPositions.add(`${pos.col},${pos.row}`);
+      });
 
-    freeSpins =
-      scatterCount === 3 ? 8 :
-      scatterCount === 4 ? 12 :
-      20;
+      // ✅ CHANGED - 0 Payout for Scatters
+      const scatterWin = 0; 
 
-    totalWin += scatterWin;
+      // ✅ CHANGED - Updated Free Spin Counts
+      freeSpins =
+        scatterCount === 3 ? 2 :
+        scatterCount === 4 ? 3 :
+        4; // 5+ scatters = 4 spins
 
-    winningLines.push({
-      symbolId: SCATTER_ID,
-      symbolName: SCATTER?.name ?? 'Scatter',
-      count: scatterCount,
-      winAmount: scatterWin,
-      ways: 1,
-      path: scatterPositions // ✅ ADDED - Include scatter positions
-    });
+      totalWin += scatterWin;
+
+      winningLines.push({
+        symbolId: SCATTER_ID,
+        symbolName: SCATTER?.name ?? 'Scatter',
+        count: scatterCount,
+        winAmount: scatterWin,
+        ways: 1,
+        path: scatterPositions
+      });
+    }
   }
 
   /* ===== PAYLINES ===== */
@@ -154,17 +160,14 @@ const calculateOnce = (
     const symbol = SYMBOLS.find(s => s.id === first);
     if (!symbol) return;
 
-    const multiplier =
-      match === 3 ? 1 :
-      match === 4 ? 2 :
-      5;
-
-    const winAmount = symbol.value * multiplier * lineBet;
+    // @ts-ignore
+    const payout = symbol.payouts ? symbol.payouts?.[match] : 0;
+    // Payouts are Total Bet Multipliers
+    const winAmount = (payout || 0) * bet;
     totalWin += winAmount;
 
     const path = line.slice(0, match).map((row, col) => ({ col, row }));
     
-    // ✅ ADDED - Track winning positions
     path.forEach(pos => {
       allWinningPositions.add(`${pos.col},${pos.row}`);
     });
@@ -179,7 +182,6 @@ const calculateOnce = (
     });
   });
 
-  // ✅ ADDED - Convert winning positions to per-reel format
   const winningPositions: WinningPosition[][] = [];
   for (let col = 0; col < COLS; col++) {
     const colWinners: WinningPosition[] = [];
@@ -191,7 +193,6 @@ const calculateOnce = (
     winningPositions.push(colWinners);
   }
 
-  // ✅ FIXED - Return with new fields
   return { 
     totalWin, 
     winningLines, 
@@ -206,12 +207,13 @@ const calculateOnce = (
 export const calculateWin = (
   stopIndices: number[],
   bet: number,
-  reelStrips: number[][]
+  reelStrips: number[][],
+  isFreeSpin: boolean = false // ✅ ADDED
 ): WinResult => {
 
   let attempts = 0;
   let result: WinResult;
-  let finalStopIndices = stopIndices; // ✅ ADDED - Track which indices are used
+  let finalStopIndices = stopIndices;
 
   do {
     const adjustedStops =
@@ -222,13 +224,12 @@ export const calculateWin = (
             return (s + Math.floor(Math.random() * 3) + 1) % stripLength;
           });
 
-    result = calculateOnce(adjustedStops, bet, reelStrips);
-    finalStopIndices = adjustedStops; // ✅ ADDED - Save the indices that were used
+    result = calculateOnce(adjustedStops, bet, reelStrips, isFreeSpin); // Pass flag
+    finalStopIndices = adjustedStops;
     attempts++;
 
-  } while (result.totalWin === 0 && attempts < 3); // 🔥 soft guarantee
+  } while (result.totalWin === 0 && attempts < 3);
 
-  // ✅ FIXED - Return with actual stop indices used
   return {
     ...result,
     adjustedStopIndices: finalStopIndices

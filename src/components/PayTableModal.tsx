@@ -31,46 +31,35 @@ const PayTableModal = ({ open, onClose }: PayTableModalProps) => {
             {/* Symbol Payouts */}
             <div>
                 <h3 className="text-xl font-bold text-yellow-500 mb-4 border-b border-white/10 pb-2">Symbol Payouts</h3>
-                <div className="space-y-4">
-                     {/* High Value Symbols */}
-                     <div className="flex items-center gap-4 bg-black/20 p-2 rounded">
-                        <img src={SYMBOLS[0].image} alt="Wild" className="w-12 h-12 object-contain" />
-                        <div>
-                            <p className="font-bold text-yellow-300">WILD (Yellowcard)</p>
-                            <p className="text-sm">Substitutes for all symbols except Scatter</p>
+                <div className="grid grid-cols-1 gap-2 text-sm overflow-y-auto pr-2 custom-scrollbar">
+                    <div className="grid grid-cols-5 font-bold text-yellow-300 border-b border-white/20 pb-1 mb-2 sticky top-0 bg-[#3e2723]">
+                        <div className="col-span-2">Symbol</div>
+                        <div className="text-center">3x</div>
+                        <div className="text-center">4x</div>
+                        <div className="text-center">5x</div>
+                    </div>
+                    {SYMBOLS.map((symbol) => (
+                        <div key={symbol.id} className="grid grid-cols-5 items-center bg-black/20 p-2 rounded hover:bg-black/30 transition-colors mb-1">
+                             <div className="col-span-2 flex items-center gap-2">
+                                <img src={symbol.image} alt={symbol.name} className="w-8 h-8 object-contain" />
+                                <span className="font-semibold text-zinc-100">{symbol.name}</span>
+                             </div>
+                             {symbol.id === 4 ? (
+                                <div className="col-span-3 text-center font-bold text-yellow-300 tracking-wider text-xs md:text-sm">
+                                    SCATTER / FREE SPINS
+                                </div>
+                             ) : (
+                                <>
+                                    {/* @ts-ignore */}
+                                    <div className="text-center font-mono text-yellow-400">{(symbol.payouts?.[3] || 0).toFixed(2)}</div>
+                                    {/* @ts-ignore */}
+                                    <div className="text-center font-mono text-yellow-400">{(symbol.payouts?.[4] || 0).toFixed(2)}</div>
+                                    {/* @ts-ignore */}
+                                    <div className="text-center font-mono text-yellow-400">{(symbol.payouts?.[5] || 0).toFixed(2)}</div>
+                                </>
+                             )}
                         </div>
-                     </div>
-                      <div className="flex items-center gap-4 bg-black/20 p-2 rounded">
-                        <img src={SYMBOLS[4].image} alt="Scatter" className="w-12 h-12 object-contain" />
-                        <div>
-                            <p className="font-bold text-blue-300">SCATTER (Football)</p>
-                            <p className="text-sm">3+ Scatters logic triggers Free Spins</p>
-                        </div>
-                     </div>
-                     
-                     <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div className="bg-black/20 p-2 rounded">
-                             <img src={SYMBOLS[8].image} alt="Trophy" className="w-8 h-8 mx-auto mb-1" />
-                             <div className="text-center">5x: 80.00</div>
-                         </div>
-                        <div className="bg-black/20 p-2 rounded">
-                             <img src={SYMBOLS[6].image} alt="K" className="w-8 h-8 mx-auto mb-1" />
-                             <div className="text-center">5x: 60.00</div>
-                        </div>
-                         <div className="bg-black/20 p-2 rounded">
-                             <img src={SYMBOLS[1].image} alt="A" className="w-8 h-8 mx-auto mb-1" />
-                             <div className="text-center">5x: 50.00</div>
-                        </div>
-                         <div className="bg-black/20 p-2 rounded">
-                             <img src={SYMBOLS[7].image} alt="Glove" className="w-8 h-8 mx-auto mb-1" />
-                             <div className="text-center">5x: 40.00</div>
-                        </div>
-                          <div className="bg-black/20 p-2 rounded">
-                             <img src={SYMBOLS[9].image} alt="Whistle" className="w-8 h-8 mx-auto mb-1" />
-                             <div className="text-center">5x: 25.00</div>
-                        </div>
-                     </div>
-
+                    ))}
                 </div>
             </div>
 
@@ -94,12 +83,27 @@ const PayTableModal = ({ open, onClose }: PayTableModalProps) => {
 
         </div>
 
-        <div className="mt-8 text-center">
+        <div className="mt-8 text-center flex gap-4 justify-center">
             <button 
                 onClick={onClose}
                 className="bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-2 px-8 rounded shadow-lg transition-transform hover:scale-105"
             >
                 CLOSE
+            </button>
+            <button 
+                onClick={() => {
+                  // Dynamic import to avoid bundling if not needed, or just standard import
+                  import('../utils/rtpSimulator').then(module => {
+                    alert('Running Simulation... Check Console for details.');
+                    setTimeout(() => {
+                        const result = module.simulateRTP(100000);
+                        alert(`Simulation Complete!\nRTP: ${result.rtp}\nHit Freq: ${result.hitFrequency}`);
+                    }, 100);
+                  });
+                }}
+                className=" hidden bg-gray-800 hover:bg-gray-700 text-xs text-gray-400 py-2 px-4 rounded border border-gray-600"
+            >
+                Run RTP Sim (Dev)
             </button>
         </div>
 

@@ -114,7 +114,7 @@ function App() {
       setLastStopIndices(stopIndices);
 
       // 2. Calculate the Result IMMEDIATELY using the ACTIVE STRIPS
-      const result = calculateWin(stopIndices, effectiveBet, activeStrips);
+      const result = calculateWin(stopIndices, effectiveBet, activeStrips, isFreeSpin);
       
       // ✅ Use adjustedStopIndices (from anti-dry logic) if available, else original
       const finalStopIndices = result.adjustedStopIndices || stopIndices;
@@ -174,9 +174,9 @@ function App() {
       setStatusMessage('GRADIATOR');
     }
 
-    // Auto-spin: schedule next spin if enabled and funds/free spins available
+    // Auto-spin logic for regular auto-spin
     if (autoSpinRef.current) {
-      // Decrement remaining count if finite
+      // (Existing auto-spin logic retained)
       if (autoSpinRemainingRef.current !== null) {
         const nextRemaining = (autoSpinRemainingRef.current ?? 0) - 1;
         autoSpinRemainingRef.current = nextRemaining;
@@ -201,20 +201,13 @@ function App() {
       } else {
         stopAutoSpin();
       }
+    } 
+    // ✅ ADDED: Automatic Free Spin Trigger (if not already handled by auto-spin)
+    else if (freeSpinsRemaining + wonFreeSpins > 0) {
+       setTimeout(() => {
+         handleSpinStart();
+       }, 1500); // 1.5s delay between free spins
     }
-
-    // Auto-Trigger Next Free Spin?
-    // Usually there's a delay, we can use an effect or just wait for user?
-    // Most slots auto-play free spins.
-    // We can't call handleSpinStart directly if it relies on state that hasn't updated yet?
-    // But we updated local state (not yet rendered).
-    // Let's rely on an effect or just let user click for now to avoid rapid fire issues without proper delay.
-    // Or simpler:
-    /*
-    if (freeSpinsRemaining > 0 || wonFreeSpins > 0) {
-         setTimeout(() => handleSpinStart(), 1000); // Simple auto-play
-    }
-    */
   };
 
   return (
@@ -268,6 +261,7 @@ function App() {
         currentBet={currentBet}
         spinning={isSpinning}
         autoSpinEnabled={autoSpinEnabled}
+        freeSpinsRemaining={freeSpinsRemaining} // ✅ ADDED
         onSpin={handleSpinStart}
         onIncreaseBet={increaseBet}
         onDecreaseBet={decreaseBet}

@@ -81,20 +81,18 @@ const WinEffects: React.FC<WinEffectsProps> = ({
     <div className="absolute inset-0 pointer-events-none z-50">
 
       {/* ================= FOOTBALL SCATTER EFFECT ================= */}
-      {hasFootballWin && (
+      {/* ================= FOOTBALL SCATTER EFFECT (REMOVED) ================= */}
+      {/* {hasFootballWin && (
         <div className="absolute inset-0 flex items-center justify-center z-40">
           <div className="football-glow-ring" />
           <div className="absolute w-[320px] h-[320px] rounded-full bg-yellow-400/20 blur-3xl animate-pulse" />
-
-          <div className="football-3d-container">
-            <img
-              src={footballImage}
-              alt="Football Scatter"
-              className="football-3d animate-football-dance"
-            />
-          </div>
+          <img 
+            src={football} 
+            alt="Football Win" 
+            className="w-48 h-48 object-contain animate-bounce drop-shadow-[0_0_50px_rgba(255,255,0,0.8)] z-50"
+          />
         </div>
-      )}
+      )} */}
 
      
 

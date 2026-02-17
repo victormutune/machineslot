@@ -5,6 +5,7 @@ interface ControlPanelProps {
   currentBet: number;
   spinning: boolean;
   autoSpinEnabled: boolean;
+  freeSpinsRemaining: number; // ✅ ADDED
   onSpin: () => void;
   onIncreaseBet: () => void;
   onDecreaseBet: () => void;
@@ -18,6 +19,7 @@ export default function SlotControlPanel({
   currentBet,
   spinning,
   autoSpinEnabled,
+  freeSpinsRemaining, // ✅ ADDED
   onSpin,
   onIncreaseBet,
   onDecreaseBet,
@@ -89,16 +91,25 @@ export default function SlotControlPanel({
                     i
                 </button>
 
-                {/* Coins / Buy Bonus (Center) */}
+                {/* Coins / Buy Bonus / Free Spin Display (Center) */}
                 <button 
-                    onClick={onBuyBonus}
-                    disabled={spinning}
-                    className="w-16 h-10 rounded-full border border-white/20 bg-black/40 flex flex-col items-center justify-center hover:bg-white/10 active:scale-95 transition"
+                    onClick={freeSpinsRemaining > 0 ? undefined : onBuyBonus}
+                    disabled={spinning || freeSpinsRemaining > 0}
+                    className={`h-10 rounded-full border border-white/20 bg-black/40 flex flex-col items-center justify-center hover:bg-white/10 active:scale-95 transition ${
+                        freeSpinsRemaining > 0 ? 'w-32 border-yellow-400/50' : 'w-16'
+                    }`}
                 >
-                    <div className="flex -space-x-1">
-                        <div className="w-3 h-3 rounded-full border border-white bg-yellow-400"></div>
-                        <div className="w-3 h-3 rounded-full border border-white bg-yellow-400"></div>
-                    </div>
+                    {freeSpinsRemaining > 0 ? (
+                        <div className="flex flex-col items-center">
+                             <span className="text-[9px] text-yellow-400 font-bold leading-none">FREE SPINS</span>
+                             <span className="text-lg text-white font-black leading-none">{freeSpinsRemaining}</span>
+                        </div>
+                    ) : (
+                        <div className="flex -space-x-1">
+                            <div className="w-3 h-3 rounded-full border border-white bg-yellow-400"></div>
+                            <div className="w-3 h-3 rounded-full border border-white bg-yellow-400"></div>
+                        </div>
+                    )}
                 </button>
 
                  {/* Menu / AutoSpin (Right) */}

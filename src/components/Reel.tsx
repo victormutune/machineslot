@@ -87,8 +87,8 @@ const Reel = forwardRef<ReelHandle, ReelProps>(({
   const uniqueCount = baseStrip.length;
 
   return (
-    <div className="relative overflow-hidden h-full flex-1 border-r border-black/10 bg-[#1a0b00]"> 
-      <div className="absolute inset-0 z-10 pointer-events-none bg-gradient-to-b from-black/40 via-white/5 to-black/40"></div>
+    <div className="relative overflow-hidden h-full flex-1 border-r border-black/10 bg-black"> 
+      <div className="absolute inset-0 z-10 pointer-events-none"></div>
 
       <div 
         ref={reelRef} 

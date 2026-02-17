@@ -15,65 +15,117 @@ import background from "./theme/background1.png";
 import frame from "./theme/frame_final.png";
 
 export const SYMBOLS = [
-  { id: 0, image: sym7, value: 100, name: "Yellowcard" },
-  { id: 1, image: symA, value: 50, name: "A" },
-  { id: 2, image: symBoot, value: 20, name: "Boot" },
-  { id: 3, image: symFlag, value: 15, name: "Flag" },
-  { id: 4, image: symFootball, value: 10, name: "Football" },
-  { id: 5, image: symJ, value: 5, name: "Armband" },
-  { id: 6, image: symK, value: 60, name: "K" },
-  { id: 7, image: symQ, value: 40, name: "Glove" },
-  { id: 8, image: symTrophy, value: 80, name: "Trophy" },
-  { id: 9, image: symWhistle, value: 25, name: "Whistle" },
+  // High Value Symbols - ADJUSTED ITERATION 5
+  { 
+    id: 0, 
+    image: sym7, 
+    name: "Yellowcard",
+    payouts: { 3: 15, 4: 90, 5: 450 } 
+  },
+  { 
+    id: 4, 
+    image: symFootball, 
+    name: "Football",
+    payouts: { 3: 0, 4: 0, 5: 0 } 
+  },
+  { 
+    id: 3, 
+    image: symFlag, 
+    name: "Flag",
+    payouts: { 3: 5, 4: 25, 5: 100 } 
+  },
+  { 
+    id: 2, 
+    image: symBoot, 
+    name: "Boot",
+    payouts: { 3: 4, 4: 20, 5: 80 } 
+  },
+  { 
+    id: 8, 
+    image: symTrophy, 
+    name: "Trophy",
+    payouts: { 3: 2.8, 4: 14, 5: 55 } 
+  },
+  { 
+    id: 7, 
+    image: symQ, 
+    name: "Glove",
+    payouts: { 3: 1.8, 4: 9, 5: 35 } 
+  },
+  
+  // Low Value Symbols - FINE TUNED
+  { 
+    id: 6, 
+    image: symK, 
+    name: "K",
+    payouts: { 3: 0.7, 4: 4.5, 5: 18 } 
+  },
+  { 
+    id: 1, 
+    image: symA, 
+    name: "A",
+    payouts: { 3: 0.7, 4: 4.5, 5: 18 } 
+  },
+  { 
+    id: 5, 
+    image: symJ, 
+    name: "Armband",
+    payouts: { 3: 0.35, 4: 2.2, 5: 9 } 
+  },
+  { 
+    id: 9, 
+    image: symWhistle, 
+    name: "Whistle",
+    payouts: { 3: 0.35, 4: 2.2, 5: 9 } 
+  },
 ];
 
 // Per-Reel Strips (5 separate reels)
-// Reel 1: Targeted mix (User request: "3 k 2 flag etc") -> More K (6) and Flag (3)
-// Scatter (4) is kept rare across all reels.
+// Reel 1: Targeted mix (High Frequency Lows)
 
 const REEL_1 = [
-  6, 3, 6, 3, 1, 9, 2, 0, 7, 5, // High K(6) and Flag(3)
-  6, 2, 1, 9, 7, 0, 8, 5, 2, 9,
-  3, 6, 1, 7, 0, 8, 2, 5, 9, 1,
-  6, 3, 2, 7, 9, 0, 1, 5, 8, 2,
-  3, 6, 9, 1, 7, 2, 0, 5, 8, 1,
-  4, 6, 3, 1, 2, 9, 0, 7, 5, 8  // 1 Scatter
+  6, 1, 5, 9, 6, 1, 5, 9, 6, 1, 5, 9, // 12 Lows
+  2, 6, 3, 1, 7, 5, 0, 9, 8, // Mixed
+  4, 5, 9, 6, 1, 1, 2, 2, 
+  9, 6, 7, 5, 3, 1, 0, 8, 
+  1, 5, 5, 6, 6, 9, 9, 4,
+  2, 6, 3, 1, 7, 5, 8, 8, 0  
 ];
 
 const REEL_2 = [
-  1, 9, 2, 8, 0, 7, 5, 6, 3, 2,
-  7, 0, 9, 1, 5, 8, 2, 6, 3, 0,
-  9, 2, 1, 7, 5, 0, 8, 6, 3, 9,
-  2, 7, 0, 1, 5, 8, 9, 6, 3, 2,
-  1, 9, 7, 0, 5, 2, 8, 6, 3, 1,
-  4, 0, 2, 7, 9, 1, 5, 8, 6, 3
+  6, 1, 5, 9, 6, 1, 5, 9, 6, 1, 5, 9, // Matching 12 Lows
+  2, 6, 3, 1, 7, 5, 0, 9, 8,
+  4, 5, 9, 6, 1, 1, 2, 2,
+  9, 6, 7, 5, 3, 1, 0, 8,
+  1, 5, 5, 6, 6, 9, 9, 7, 
+  2, 6, 3, 1, 7, 5, 8, 8, 0
 ];
 
 const REEL_3 = [
-  8, 0, 6, 2, 9, 1, 7, 3, 5, 0,
-  2, 9, 1, 7, 5, 8, 6, 3, 0, 2,
-  9, 1, 7, 5, 0, 8, 6, 3, 2, 9,
-  0, 2, 7, 1, 5, 9, 8, 6, 3, 0,
-  1, 7, 9, 2, 5, 8, 0, 6, 3, 1,
-  4, 2, 0, 7, 9, 1, 5, 8, 6, 3
+  6, 1, 5, 9, 6, 1, 5, 9, 6, 1, 5, 9, // Matching 12 Lows
+  2, 6, 3, 1, 7, 5, 0, 9, 8,
+  5, 5, 9, 6, 1, 1, 2, 2, 4,
+  9, 6, 7, 5, 3, 1, 0, 8,
+  1, 5, 5, 6, 6, 9, 9, 7,
+  2, 6, 3, 1, 7, 5, 8, 8, 0
 ];
 
 const REEL_4 = [
-  5, 3, 7, 1, 9, 2, 0, 8, 6, 3,
-  7, 1, 9, 2, 0, 8, 6, 5, 3, 7,
-  1, 9, 2, 0, 8, 6, 5, 3, 7, 1,
-  9, 2, 0, 8, 6, 5, 3, 7, 1, 9,
-  2, 0, 8, 6, 5, 3, 7, 1, 9, 2,
-  4, 8, 0, 6, 2, 9, 1, 7, 3, 5
+  6, 6, 6, 1, 1, 1, 5, 5, 5, 9, 9, 9, 
+  2, 2, 3, 3, 7, 7, 0, 8, 8,
+  5, 5, 6, 6, 1, 1, 2, 2, 7,
+  9, 9, 7, 7, 3, 3, 0, 8, 8,
+  1, 1, 5, 5, 6, 6, 9, 9, 4,
+  2, 2, 3, 3, 7, 7, 8, 8, 0
 ];
 
 const REEL_5 = [
-  2, 7, 9, 1, 5, 0, 8, 6, 3, 2,
-  7, 9, 1, 5, 0, 8, 6, 3, 2, 7,
-  9, 1, 5, 0, 8, 6, 3, 2, 7, 9,
-  1, 5, 0, 8, 6, 3, 2, 7, 9, 1,
-  5, 0, 8, 6, 3, 2, 7, 9, 1, 5,
-  4, 6, 8, 0, 2, 7, 9, 1, 5, 3
+  6, 6, 6, 1, 1, 1, 5, 5, 5, 9, 9, 9, 
+  2, 2, 3, 3, 7, 7, 0, 8, 8,
+  5, 5, 6, 6, 1, 1, 2, 2, 7,
+  9, 9, 7, 7, 3, 3, 0, 8, 8,
+  1, 1, 5, 5, 6, 6, 9, 9, 4, // Scatter
+  2, 2, 3, 3, 7, 7, 8, 8, 0
 ];
 
 export const REEL_STRIPS = [REEL_1, REEL_2, REEL_3, REEL_4, REEL_5];
