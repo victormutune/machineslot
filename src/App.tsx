@@ -202,7 +202,7 @@ function App() {
         stopAutoSpin();
       }
     } 
-    // ✅ ADDED: Automatic Free Spin Trigger (if not already handled by auto-spin)
+    // Automatic Free Spin Trigger (if not already handled by auto-spin)
     else if (freeSpinsRemaining + wonFreeSpins > 0) {
        setTimeout(() => {
          handleSpinStart();
@@ -237,7 +237,7 @@ function App() {
       <div className="flex items-stretch justify-center w-full max-w-[1400px]">
         
 
-        <div className="w-[90%] lg:w-[60%] max-w-[1250px] relative">
+        <div className="w-[80%] lg:w-[45%] max-w-[1000px] relative">
             <GoldenFrame width="100%" maxWidth="100%" isBonus={freeSpinsRemaining > 0}>
                 <SlotMachine 
                 ref={slotMachineRef}

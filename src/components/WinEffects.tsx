@@ -6,12 +6,14 @@ interface WinEffectsProps {
   winResult: WinResult | null;
   stopIndices: number[];
   freeSpinsWon?: number;
+  showAmount?: boolean;
 }
 
 const WinEffects: React.FC<WinEffectsProps> = ({
   winResult,
   stopIndices,
   freeSpinsWon = 0,
+  showAmount = false,
 }) => {
   const [showEffects, setShowEffects] = useState(false);
   const [displayedWin, setDisplayedWin] = useState(0);
@@ -96,13 +98,10 @@ const WinEffects: React.FC<WinEffectsProps> = ({
 
      
 
-      {/* ================= WIN TEXT ================= */}
-      {winResult.totalWin > 0 && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <h1 className="text-6xl font-black text-yellow-300 animate-bounce win-text-glow">
-            WIN!
-          </h1>
-          <h2 className="mt-2 text-4xl font-extrabold text-white">
+      {/* ================= WIN AMOUNT ================= */}
+      {winResult.totalWin > 0 && showAmount && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center animate-in fade-in duration-200">
+          <h2 className="text-5xl font-extrabold text-yellow-300 animate-bounce win-text-glow">
             ${displayedWin.toLocaleString('en-US')}
           </h2>
 

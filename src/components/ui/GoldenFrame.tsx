@@ -11,10 +11,10 @@ interface GoldenFrameProps {
 
 const GoldenFrame: React.FC<GoldenFrameProps> = ({ 
   children, 
-  width = '60%', 
+  width = '50%', 
   maxWidth = '1250px', 
   height = 'auto', 
-  maxHeight = '65vh',
+  maxHeight = '60vh',
   isBonus = false
 }) => {
   return (
@@ -31,8 +31,8 @@ const GoldenFrame: React.FC<GoldenFrameProps> = ({
         alignItems: 'center',
         transition: 'all 0.5s ease',
         
-        // Fancy Border & Background
-        border: isBonus ? '5px ridge #FFD700' : '5px ridge #693183ff', 
+        // Fancy Border & Background - Football Green Theme
+        border: isBonus ? '5px ridge #FFD700' : '4px ridge #166534', 
         borderRadius: '15px',
         background: isBonus 
           ? 'linear-gradient(to bottom, #2a1a05, #493105)' 
@@ -45,11 +45,10 @@ const GoldenFrame: React.FC<GoldenFrameProps> = ({
             inset 0 0 30px rgba(255, 69, 0, 0.5)
           `
           : `
-            0 0 0 2px #5c4010,
-            0 0 0 5px #89be0dff,
-            0 0 30px rgba(0,0,0,0.8),
-            inset 0 0 20px rgba(180, 44, 44, 0.8),
-            inset 0 0 50px rgba(184, 134, 11, 0.2)
+            0 0 0 2px #000000,
+            0 0 0 5px #000000,
+            0 0 25px rgba(0, 0, 0, 0.8),
+            inset 0 0 20px rgba(0, 0, 0, 0.8)
           `,
         padding: '8px', 
       }}

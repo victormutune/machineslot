@@ -137,14 +137,14 @@ export default function SlotControlPanel({
 
       {/* ================= DESKTOP LAYOUT (LG+) ================= */}
       <div className="hidden lg:flex w-full justify-center p-4 fixed bottom-0 left-0 z-50">
-        <div className="relative flex items-center justify-center w-full max-w-4xl">
+        <div className="relative flex items-center justify-center w-full max-w-3xl">
             
             {/* Buy Bonus Button */}
             <div className="absolute left-0 z-20 transform -translate-x-4">
                 <button
                 onClick={onBuyBonus}
                 disabled={spinning}
-                className="w-20 h-20 rounded-full bg-[#fbbf24] border-2 border-[#f59e0b] shadow-lg flex flex-col items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-18 h-18 rounded-full bg-[#fbbf24] border-2 border-[#f59e0b] shadow-lg flex flex-col items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                 <span className="text-black font-extrabold text-[10px] leading-tight text-center">
                     BUY<br />BONUS
@@ -153,7 +153,7 @@ export default function SlotControlPanel({
             </div>
 
             {/* Main Control Bar */}
-            <div className="relative bg-[#1a1b1e]/95 backdrop-blur-sm h-16 w-full max-w-3xl flex items-center px-4 rounded-sm shadow-2xl border-t border-white/10 ml-8">
+            <div className="relative bg-[#1a1b1e]/95 backdrop-blur-sm h-16 w-full max-w-2xl flex items-center px-4 rounded-sm shadow-2xl border-t border-white/10 ml-8">
                 
                 {/* Left Section: Menu & Balance */}
                 <div className="flex items-center gap-6 pl-8">
@@ -185,7 +185,7 @@ export default function SlotControlPanel({
                 <div className="flex items-center gap-4 pr-18">
                     
                     {/* Bet Control */}
-                    <div className="flex items-center bg-[#0f1012] rounded-md h-12 border border-white/5 relative mr-8 overflow-hidden">
+                    <div className="flex items-center bg-[#0f1012] rounded-md h-12 border border-white/5 relative mr-12 overflow-hidden">
                         <div className="flex flex-col justify-center px-4 min-w-[100px]">
                             <span className="text-[9px] text-gray-400 font-bold tracking-wider uppercase">Demo Bet</span>
                             <span className="text-lg font-bold text-white">${currentBet.toFixed(2)}</span>
@@ -216,12 +216,12 @@ export default function SlotControlPanel({
                     </div>
 
                     {/* Spin Button Container (Overlapping) */}
-                    <div className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-2 z-20 flex items-center gap-2">
+                    <div className="absolute right-0 top-1/2 transform -translate-y-1/2 z-20 flex items-center gap-2 pr-2">
                         {/* Spin Button */}
                         <button 
                             onClick={onSpin}
                             disabled={spinning}
-                            className={`w-20 h-20 rounded-full border-4 border-[#2b2d31] bg-[#1a1b1e] flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all group ${spinning ? 'opacity-80' : ''}`}
+                            className={`w-18 h-18 rounded-full border-4 border-[#2b2d31] bg-[#1a1b1e] flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all group ${spinning ? 'opacity-80' : ''}`}
                         >
                             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`text-white ${spinning ? 'animate-spin' : ''}`}>
                                 <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path>
@@ -229,20 +229,14 @@ export default function SlotControlPanel({
                             </svg>
                         </button>
 
-                        {/* Auto Spin Button (Small) */}
-                        <button 
+                         {/* Auto Spin Button (Small - moved to the right) */}
+                         <button 
                             onClick={onToggleAutoSpin}
-                            className={`w-8 h-8 rounded-full border border-white/10 flex items-center justify-center hover:bg-white/5 transition active:scale-95 relative ${autoSpinEnabled ? 'bg-green-600' : 'bg-[#1a1b1e]'}`}
+                            className={`w-10 h-10 rounded-full border border-white/10 flex items-center justify-center hover:bg-white/5 transition active:scale-95 relative ${autoSpinEnabled ? 'bg-green-600' : 'bg-[#1a1b1e]'}`}
                         >
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none" className="text-white ml-0.5">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none" className="text-white ml-0.5">
                                 <polygon points="5 3 19 12 5 21 5 3"></polygon>
                             </svg>
-                            <span className="absolute top-0 right-0 -mt-1 -mr-1">
-                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white transform -scale-x-100">
-                                    <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path>
-                                    <path d="M21 3v5h-5"></path>
-                                </svg>
-                            </span>
                         </button>
                     </div>
 

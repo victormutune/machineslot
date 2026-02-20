@@ -4,10 +4,11 @@ import { SYMBOLS } from '../assets/assetMap';
 
 interface ReelProps {
   rows?: number;
+  colIndex: number; // ✅ Added
   order?: number[];
   winningRows?: boolean[];
   isSpinning?: boolean;
-  hasAnyWin?: boolean; // ✅ ADDED: For dimming non-winners
+  hasAnyWin?: boolean; 
 }
 
 export interface ReelHandle {
@@ -16,6 +17,7 @@ export interface ReelHandle {
 
 const Reel = forwardRef<ReelHandle, ReelProps>(({ 
   rows = 4, 
+  colIndex,
   order, 
   winningRows, 
   isSpinning,
@@ -87,7 +89,7 @@ const Reel = forwardRef<ReelHandle, ReelProps>(({
   const uniqueCount = baseStrip.length;
 
   return (
-    <div className="relative overflow-hidden h-full flex-1 border-r border-black/10 bg-black"> 
+    <div className="relative overflow-hidden h-full flex-1 border-r border-black/10 bg-gray-900"> 
       <div className="absolute inset-0 z-10 pointer-events-none"></div>
 
       <div 
@@ -102,12 +104,13 @@ const Reel = forwardRef<ReelHandle, ReelProps>(({
         {REEL_SYMBOLS.map((symbol, i) => {
           let isWinner = false;
           let shouldDim = false;
+          let rowIndex = -1;
 
           if (!isSpinning && finalStopIndex !== null) {
             const startVisibleIndex = uniqueCount + finalStopIndex;
             
             if (i >= startVisibleIndex && i < startVisibleIndex + rows) {
-              const rowIndex = i - startVisibleIndex;
+              rowIndex = i - startVisibleIndex;
               
               if (winningRows && winningRows[rowIndex]) {
                 isWinner = true;
@@ -121,6 +124,8 @@ const Reel = forwardRef<ReelHandle, ReelProps>(({
           return (
             <div 
               key={`${symbol.id}-${i}`} 
+              // Add data attribute for the overlay to find centerline
+              data-grid-coord={rowIndex >= 0 ? `${colIndex},${rowIndex}` : undefined}
               className="w-full flex items-center justify-center p-1" 
               style={{
                 height: `${100 / TOTAL_SYMBOLS}%` 

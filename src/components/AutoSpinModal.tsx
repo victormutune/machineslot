@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 export interface AutoSpinModalProps {
   open: boolean;
@@ -6,10 +6,24 @@ export interface AutoSpinModalProps {
   onSelect: (count: number | null) => void;
 }
 
-const OPTIONS = [10, 25, 50, 100];
+const OPTIONS = [10, 20, 50, 100, 200, 500];
 
 const AutoSpinModal: React.FC<AutoSpinModalProps> = ({ open, onClose, onSelect }) => {
+  const [selectedOption, setSelectedOption] = useState<number | null | undefined>(undefined);
+
+  useEffect(() => {
+    if (open) {
+      setSelectedOption(undefined);
+    }
+  }, [open]);
+
   if (!open) return null;
+
+  const handleStart = () => {
+    if (selectedOption !== undefined) {
+      onSelect(selectedOption);
+    }
+  };
 
   return (
     <div
@@ -19,15 +33,14 @@ const AutoSpinModal: React.FC<AutoSpinModalProps> = ({ open, onClose, onSelect }
       aria-label="Auto Play"
     >
       {/* Backdrop */}
-      <button
-        type="button"
-        className="absolute inset-0 bg-black/70"
+      <div
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
         onClick={onClose}
-        aria-label="Close"
+        aria-hidden="true"
       />
 
       {/* Modal */}
-      <div className="relative w-[92%] max-w-[420px] rounded-[18px] bg-gradient-to-b from-[#111827] to-[#020617] shadow-[0_30px_80px_rgba(0,0,0,0.85)] ring-1 ring-[#facc15]/40">
+      <div className="relative w-[92%] max-w-[420px] rounded-[18px] bg-gradient-to-b from-[#111827] to-[#020617] shadow-[0_30px_80px_rgba(0,0,0,0.85)] ring-1 ring-[#facc15]/40 animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 rounded-t-[18px] bg-[#facc15]/90">
           <div className="text-[#1f2937] font-extrabold text-lg tracking-[0.18em] uppercase">
@@ -36,25 +49,32 @@ const AutoSpinModal: React.FC<AutoSpinModalProps> = ({ open, onClose, onSelect }
           <button
             type="button"
             onClick={onClose}
-            className="h-[34px] w-[34px] rounded-full bg-[#111827]/80 text-white/90 ring-1 ring-white/10 hover:bg-[#020617] active:scale-[0.98] transition"
+            className="h-[34px] w-[34px] rounded-full bg-[#111827]/80 text-white/90 ring-1 ring-white/10 hover:bg-[#020617] active:scale-[0.98] transition flex items-center justify-center"
             aria-label="Close auto play modal"
           >
-            ×
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
           </button>
         </div>
 
-        <div className="px-5 py-5">
-          <div className="text-center text-xs uppercase tracking-[0.18em] text-[#e5e7eb] mb-3">
+        <div className="px-5 py-6">
+          <div className="text-center text-xs uppercase tracking-[0.18em] text-[#9ca3af] mb-4 font-bold">
             Select number of auto spins
           </div>
 
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-3 gap-3 mb-4">
             {OPTIONS.map((v) => (
               <button
                 key={v}
                 type="button"
-                onClick={() => onSelect(v)}
-                className="px-2 py-2 rounded-[12px] bg-[#020617] hover:bg-[#111827] border border-[#4b5563] text-sm font-semibold text-[#e5e7eb] shadow-[0_8px_20px_rgba(0,0,0,0.7)]"
+                onClick={() => setSelectedOption(v)}
+                className={`py-3 rounded-[12px] border text-sm font-bold shadow-md transition-all active:scale-95 flex flex-col items-center justify-center ${
+                  selectedOption === v
+                    ? 'bg-[#facc15] border-[#facc15] text-[#020617] ring-2 ring-[#facc15]/50 scale-105 z-10'
+                    : 'bg-[#1f2937]/50 hover:bg-[#374151] border-white/10 text-gray-200 hover:border-white/20'
+                }`}
               >
                 {v}
               </button>
@@ -63,10 +83,27 @@ const AutoSpinModal: React.FC<AutoSpinModalProps> = ({ open, onClose, onSelect }
 
           <button
             type="button"
-            onClick={() => onSelect(null)}
-            className="mt-4 w-full px-3 py-2 rounded-[999px] bg-[#16a34a] hover:bg-[#22c55e] text-sm font-bold text-white tracking-[0.16em] uppercase shadow-[0_10px_30px_rgba(22,163,74,0.6)]"
+            onClick={() => setSelectedOption(null)}
+            className={`w-full py-3 mb-6 rounded-[12px] border text-sm font-bold shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 ${
+              selectedOption === null
+                ? 'bg-[#facc15] border-[#facc15] text-[#020617] ring-2 ring-[#facc15]/50 scale-[1.02]'
+                : 'bg-[#1f2937]/50 hover:bg-[#374151] border-white/10 text-gray-200 hover:border-white/20'
+            }`}
           >
-            Infinite
+           Infinite <span className="text-xl leading-none">∞</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleStart}
+            disabled={selectedOption === undefined}
+            className={`w-full px-6 py-4 rounded-[14px] font-black text-base tracking-[0.1em] uppercase shadow-lg transition-all ${
+              selectedOption !== undefined
+                ? 'bg-[#16a34a] hover:bg-[#15803d] text-white hover:shadow-[#16a34a]/40 hover:-translate-y-0.5 active:translate-y-0'
+                : 'bg-[#374151] text-gray-500 cursor-not-allowed opacity-50'
+            }`}
+          >
+            Start Auto Spin
           </button>
         </div>
       </div>

@@ -4,6 +4,7 @@ import WinEffects from './WinEffects';
 import { type WinResult } from '../utils/winLogic';
 import { getReelWinningRows, hasAnyWin } from '../utils/winningHelper';
 import { REEL_STRIPS } from '../assets/assetMap';
+import PaylineOverlay from './ui/PaylineOverlay';
 
 export interface SlotMachineHandle {
   spin: (stopIndices: number[], spins?: number, reelOrders?: number[][]) => void;
@@ -67,30 +68,44 @@ const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>(({
     }
   }));
 
+  // Track payline animation phase to sync win amount display
+  const [paylinePhase, setPaylinePhase] = React.useState<'flowing' | 'complete'>('flowing');
+
   // Winning rows for highlighting
   const reelWinningRows = getReelWinningRows(winResult);
   const hasWin = hasAnyWin(winResult);
 
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center">
-      <div className="reels-grid grid grid-cols-5 gap-1 w-full h-full"> 
+      <div className="reels-grid grid grid-cols-5 gap-1 w-full h-full relative"> 
         {reelRefs.map((reelRef, index) => (
           <Reel
             key={index}
             ref={reelRef}
             rows={4}
+            colIndex={index} // ✅ Pass column index
             order={reelStrips[index]} // Use the individual strip for this reel
             winningRows={reelWinningRows[index]}
             isSpinning={isSpinning}
             hasAnyWin={hasWin}
           />
         ))}
+        {/* Overlay for Paylines */}
+        {!isSpinning && winResult && (
+           <div className="absolute inset-0 pointer-events-none z-20">
+               <PaylineOverlay
+                 winningLines={winResult.winningLines}
+                 onPhaseChange={setPaylinePhase}
+               />
+           </div>
+        )}
       </div>
 
       <WinEffects
         winResult={winResult}
         stopIndices={currentStopIndices}
         freeSpinsWon={winResult?.freeSpins ?? 0}
+        showAmount={paylinePhase === 'complete'}
       />
     </div>
   );
