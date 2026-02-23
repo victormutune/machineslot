@@ -1,6 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { type WinResult } from '../utils/winLogic';
-import footballImage from '../assets/symbols/FOOTBALL.png';
 
 interface WinEffectsProps {
   winResult: WinResult | null;
@@ -21,12 +20,7 @@ const WinEffects: React.FC<WinEffectsProps> = ({
     { id: number; left: string; top: string; color: string; dx: string; dy: string }[]
   >([]);
 
-  /* ================= FOOTBALL SCATTER DETECT ================= */
-  const hasFootballWin = useMemo(() => {
-    return winResult?.winningLines.some(line =>
-      line.symbolName.toLowerCase().includes('football')
-    );
-  }, [winResult]);
+
 
   useEffect(() => {
     if (!winResult) {

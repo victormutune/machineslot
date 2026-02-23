@@ -26,7 +26,7 @@ function App() {
   const [autoSpinEnabled, setAutoSpinEnabled] = useState(false);
   const [, setAutoSpinRemaining] = useState<number | null>(null);
   const [autoSpinModalOpen, setAutoSpinModalOpen] = useState(false);
-  const [statusMessage, setStatusMessage] = useState<string>('GRADIATOR');
+  const [_statusMessage, setStatusMessage] = useState<string>('GRADIATOR');
   const [payTableOpen, setPayTableOpen] = useState(false);
   const [boostActive] = useState(false);
   
