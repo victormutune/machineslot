@@ -10,7 +10,6 @@ export const getReelWinningRows = (
   rows: number = 4
 ): boolean[][] => {
   if (!winResult || winResult.winningPositions.length === 0) {
-    // No wins - return all false
     return Array(cols).fill(null).map(() => Array(rows).fill(false));
   }
 
@@ -19,7 +18,6 @@ export const getReelWinningRows = (
   for (let col = 0; col < cols; col++) {
     const rowFlags = Array(rows).fill(false);
     
-    // Mark rows that have winning symbols
     const colWinners = winResult.winningPositions[col] || [];
     colWinners.forEach(pos => {
       if (pos.row >= 0 && pos.row < rows) {

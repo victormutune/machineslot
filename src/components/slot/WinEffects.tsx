@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { type WinResult } from '../utils/winLogic';
+import { type WinResult } from '../../slot/winLogic';
 
 interface WinEffectsProps {
   winResult: WinResult | null;
@@ -19,8 +19,6 @@ const WinEffects: React.FC<WinEffectsProps> = ({
   const [particles, setParticles] = useState<
     { id: number; left: string; top: string; color: string; dx: string; dy: string }[]
   >([]);
-
-
 
   useEffect(() => {
     if (!winResult) {
@@ -75,23 +73,6 @@ const WinEffects: React.FC<WinEffectsProps> = ({
 
   return (
     <div className="absolute inset-0 pointer-events-none z-50">
-
-      {/* ================= FOOTBALL SCATTER EFFECT ================= */}
-      {/* ================= FOOTBALL SCATTER EFFECT (REMOVED) ================= */}
-      {/* {hasFootballWin && (
-        <div className="absolute inset-0 flex items-center justify-center z-40">
-          <div className="football-glow-ring" />
-          <div className="absolute w-[320px] h-[320px] rounded-full bg-yellow-400/20 blur-3xl animate-pulse" />
-          <img 
-            src={football} 
-            alt="Football Win" 
-            className="w-48 h-48 object-contain animate-bounce drop-shadow-[0_0_50px_rgba(255,255,0,0.8)] z-50"
-          />
-        </div>
-      )} */}
-
-     
-
       {/* ================= WIN AMOUNT ================= */}
       {winResult.totalWin > 0 && showAmount && (
         <div className="absolute inset-0 flex flex-col items-center justify-center animate-in fade-in duration-200">

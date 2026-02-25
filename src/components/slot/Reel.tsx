@@ -1,10 +1,10 @@
 import { useMemo, useRef, forwardRef, useImperativeHandle, useState } from 'react';
 import gsap from 'gsap';
-import { SYMBOLS } from '../assets/assetMap';
+import { SYMBOLS } from '../../assets/assetMap';
 
 interface ReelProps {
   rows?: number;
-  colIndex: number; // ✅ Added
+  colIndex: number;
   order?: number[];
   winningRows?: boolean[];
   isSpinning?: boolean;
@@ -124,7 +124,6 @@ const Reel = forwardRef<ReelHandle, ReelProps>(({
           return (
             <div 
               key={`${symbol.id}-${i}`} 
-              // Add data attribute for the overlay to find centerline
               data-grid-coord={rowIndex >= 0 ? `${colIndex},${rowIndex}` : undefined}
               className="w-full flex items-center justify-center p-1" 
               style={{
@@ -135,7 +134,7 @@ const Reel = forwardRef<ReelHandle, ReelProps>(({
                 src={symbol.image} 
                 alt={symbol.name}
                 className={`
-                  w-[80%] h-[80%] object-contain filter drop-shadow-md transition-all duration-500
+                  w-[70%] h-[70%] object-contain filter drop-shadow-md transition-all duration-500
                   ${isWinner ? 'animate-bounce-zoom z-20 scale-110 drop-shadow-[0_0_15px_rgba(255,215,0,0.8)]' : ''}
                   ${shouldDim ? 'opacity-40 grayscale-[0.5] scale-90 blur-[1px]' : ''}
                 `}

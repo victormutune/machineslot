@@ -6,8 +6,8 @@ export interface WinResult {
   totalWin: number;
   winningLines: WinningLine[];
   freeSpins: number;
-  adjustedStopIndices: number[]; // ✅ ADDED - Return actual indices used
-  winningPositions: WinningPosition[][]; // ✅ ADDED - Per-reel winning positions
+  adjustedStopIndices: number[];
+  winningPositions: WinningPosition[][];
 }
 
 export interface WinningLine {
@@ -53,9 +53,6 @@ const PAYLINES: number[][] = [
 /* ================= GRID ================= */
 /* grid[col][row] = symbol.id */
 
-/* ================= GRID ================= */
-/* grid[col][row] = symbol.id */
-
 export const getVisibleGrid = (
   stopIndices: number[],
   reelStrips: number[][]
@@ -77,13 +74,11 @@ export const getVisibleGrid = (
 
 /* ================= CORE CALCULATION ================= */
 
-/* ================= CORE CALCULATION ================= */
-
 const calculateOnce = (
   stopIndices: number[],
   bet: number,
   reelStrips: number[][],
-  isFreeSpin: boolean = false // ✅ ADDED - Prevent retriggers
+  isFreeSpin: boolean = false
 ): WinResult => {
 
   const grid = getVisibleGrid(stopIndices, reelStrips);
@@ -114,15 +109,12 @@ const calculateOnce = (
     }
 
     if (scatterCount >= 3) {
-      // Highlight winning scatters
       scatterPositions.forEach(pos => {
         allWinningPositions.add(`${pos.col},${pos.row}`);
       });
 
-      // ✅ CHANGED - 0 Payout for Scatters
-      const scatterWin = 0; 
+      const scatterWin = 0;
 
-      // ✅ CHANGED - Updated Free Spin Counts
       freeSpins =
         scatterCount === 3 ? 2 :
         scatterCount === 4 ? 3 :
@@ -162,7 +154,6 @@ const calculateOnce = (
 
     // @ts-ignore
     const payout = symbol.payouts ? symbol.payouts?.[match] : 0;
-    // Payouts are Total Bet Multipliers
     const winAmount = (payout || 0) * bet;
     totalWin += winAmount;
 
@@ -208,7 +199,7 @@ export const calculateWin = (
   stopIndices: number[],
   bet: number,
   reelStrips: number[][],
-  isFreeSpin: boolean = false // ✅ ADDED
+  isFreeSpin: boolean = false
 ): WinResult => {
 
   let attempts = 0;
@@ -224,14 +215,14 @@ export const calculateWin = (
             return (s + Math.floor(Math.random() * 3) + 1) % stripLength;
           });
 
-    result = calculateOnce(adjustedStops, bet, reelStrips, isFreeSpin); // Pass flag
+    result = calculateOnce(adjustedStops, bet, reelStrips, isFreeSpin);
     finalStopIndices = adjustedStops;
     attempts++;
 
-  } while (result.totalWin === 0 && attempts < 3);
+  } while (result!.totalWin === 0 && attempts < 3);
 
   return {
-    ...result,
+    ...result!,
     adjustedStopIndices: finalStopIndices
   };
 };

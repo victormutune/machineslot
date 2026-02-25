@@ -112,4 +112,3 @@ const AutoSpinModal: React.FC<AutoSpinModalProps> = ({ open, onClose, onSelect }
 };
 
 export default AutoSpinModal;
-

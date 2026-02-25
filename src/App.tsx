@@ -1,27 +1,92 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { ASSETS, REEL_STRIPS, BONUS_REEL_STRIPS } from './assets/assetMap';
-import SlotMachine, { type SlotMachineHandle } from './components/SlotMachine';
+import SlotMachine, { type SlotMachineHandle } from './components/slot/SlotMachine';
 import ControlPanel from './components/ControlPanel';
 import GoldenFrame from './components/ui/GoldenFrame';
-import WinEffects from './components/WinEffects';
-import BuyBonusModal, { type BuyBonusChoice } from './components/BuyBonusModal';
-import AutoSpinModal from './components/AutoSpinModal';
+import WinEffects from './components/slot/WinEffects';
+import BuyBonusModal, { type BuyBonusChoice } from './components/modals/BuyBonusModal';
+import AutoSpinModal from './components/modals/AutoSpinModal';
+import PayTableModal from './components/modals/PayTableModal';
+import type { WinResult, WinningPosition } from './slot/winLogic';
+import {
+  emitBalanceUpdate,
+  emitRoundActive,
+  fromMicroUnits,
+} from './stake/stakeEngineHelpers';
+import type { Balance } from 'stake-engine';
+import { StakeEngineClient, fromRGSAmount } from './stake/stakeEngineClient';
 
-import { calculateWin, type WinResult } from './utils/winLogic';
-import PayTableModal from './components/PayTableModal';
+// ── API config ────────────────────────────────────────────────────────────────
+// Used only for the local FastAPI dev backend (fallback when no rgs_url param).
+const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
+
+// ── Bet levels (display dollars) ──────────────────────────────────────────────
+const BET_LEVELS = [1.00, 2.00, 5.00, 10.00, 20.00, 50.00, 100.00];
+const DEFAULT_BET_INDEX = 2; // $5.00
+
+// ── API response types ────────────────────────────────────────────────────────
+
+interface ApiWinPosition { col: number; row: number }
+interface ApiWinLine {
+  symbol_id: number;
+  symbol_name: string;
+  count: number;
+  win_amount: number;
+  ways: number;
+  path: ApiWinPosition[];
+}
+interface PlayResponse {
+  session_id: string;
+  stop_indices: number[];
+  grid: number[][];
+  winning_lines: ApiWinLine[];
+  winning_positions: ApiWinPosition[][];
+  total_win: number;
+  free_spins_awarded: number;
+  free_spins_remaining: number;
+  balance: number;
+  mode: string;
+}
+
+// ── Map API response → WinResult (used by visual components) ─────────────────
+function mapToWinResult(resp: PlayResponse): WinResult {
+  return {
+    totalWin: resp.total_win,
+    freeSpins: resp.free_spins_awarded,
+    adjustedStopIndices: resp.stop_indices,
+    winningLines: resp.winning_lines.map(l => ({
+      symbolId: l.symbol_id,
+      symbolName: l.symbol_name,
+      count: l.count,
+      winAmount: l.win_amount,
+      ways: l.ways,
+      path: l.path.map(p => ({ col: p.col, row: p.row })),
+    })),
+    winningPositions: resp.winning_positions.map(colList =>
+      colList.map((p: ApiWinPosition): WinningPosition => ({ col: p.col, row: p.row }))
+    ),
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 function App() {
-  // --- Game State ---
+  // --- Session / Balance from server ---
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [balance, setBalance] = useState(10000);
-  const [currentBet, setCurrentBet] = useState(100);
+  const [currentBetIndex, setCurrentBetIndex] = useState(DEFAULT_BET_INDEX);
+  const currentBet = BET_LEVELS[currentBetIndex];
   const [, setLastWin] = useState(0);
   const [winResult, setWinResult] = useState<WinResult | null>(null);
   const [lastStopIndices, setLastStopIndices] = useState<number[]>([]);
   const [isSpinning, setIsSpinning] = useState(false);
   const [spinCount] = useState(5);
-  // Free Spins State
+
+  // Free Spins State (synced from server)
   const [freeSpinsRemaining, setFreeSpinsRemaining] = useState(0);
   const [lastFreeSpinsWon, setLastFreeSpinsWon] = useState(0);
+
+  // UI State
   const [buyBonusOpen, setBuyBonusOpen] = useState(false);
   const [autoSpinEnabled, setAutoSpinEnabled] = useState(false);
   const [, setAutoSpinRemaining] = useState<number | null>(null);
@@ -29,189 +94,238 @@ function App() {
   const [_statusMessage, setStatusMessage] = useState<string>('GRADIATOR');
   const [payTableOpen, setPayTableOpen] = useState(false);
   const [boostActive] = useState(false);
-  
-  // Bonus/Logic State
-  const [currentStrips, setCurrentStrips] = useState<number[][]>(REEL_STRIPS); // Track which strips are active
-  const bonusStartBetMultiplierRef = useRef<number>(1);
 
-  // Ref to the slot machine to trigger spins
+  // Track which visual strips to use (for SlotMachine animation)
+  const [currentStrips, setCurrentStrips] = useState<number[][]>(REEL_STRIPS);
+
+  const bonusStartBetMultiplierRef = useRef<number>(1);
   const slotMachineRef = useRef<SlotMachineHandle>(null);
-  
-  // Store the pending win amount for the current spin
   const pendingWinRef = useRef<number>(0);
   const pendingWinResultRef = useRef<WinResult | null>(null);
   const pendingFreeSpinsRef = useRef<number>(0);
   const autoSpinRef = useRef(false);
   const autoSpinRemainingRef = useRef<number | null>(null);
-  
+  // Holds the StakeEngineClient instance when launched via a real casino operator URL.
+  const rgsClientRef = useRef<StakeEngineClient | null>(null);
 
-  // --- Event Handlers ---
+  // ── Authenticate on mount ──────────────────────────────────────────────────
+  // Also subscribe to stake-engine balanceUpdate events so external tools
+  // (e.g. stake-engine idle timer) can push balance refreshes into our state.
+  useEffect(() => {
+    const onBalanceUpdate = (e: Event) => {
+      const ev = e as CustomEvent<Balance>;
+      // Convert micro-units back to dollars
+      setBalance(fromMicroUnits(ev.detail.amount));
+    };
+    window.addEventListener('balanceUpdate', onBalanceUpdate);
+    return () => window.removeEventListener('balanceUpdate', onBalanceUpdate);
+  }, []);
 
-  const increaseBet = () => {
-    setCurrentBet(prev => Math.min(prev + 10, balance)); 
-  };
+  useEffect(() => {
+    const authenticate = async () => {
+      // ── Tier 1: Real Stake Engine RGS (casino operator URL params) ────────
+      const rgsClient = StakeEngineClient.fromURL();
+      if (rgsClient) {
+        try {
+          const authResp = await rgsClient.authenticate();
+          rgsClientRef.current = rgsClient;
+          const dollarBalance = fromRGSAmount(authResp.balance.amount);
+          setSessionId(authResp.balance.currency); // use currency as a session key token
+          setBalance(dollarBalance);
+          emitBalanceUpdate(dollarBalance, authResp.balance.currency);
+          console.info('[Gradiator] Authenticated via Stake Engine RGS.');
+          return;
+        } catch (err) {
+          console.warn('[Gradiator] Stake Engine RGS auth failed, trying local backend:', err);
+        }
+      }
 
-  const decreaseBet = () => {
-    setCurrentBet(prev => Math.max(10, prev - 10)); 
-  };
+      // ── Tier 2: Local FastAPI dev backend ────────────────────────────────
+      try {
+        const res = await fetch(`${API_URL}/authenticate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ player_id: 'player_' + Date.now(), currency: 'USD' }),
+        });
+        if (!res.ok) throw new Error('Auth failed');
+        const data = await res.json();
+        setSessionId(data.session_id);
+        setBalance(data.balance);
+        emitBalanceUpdate(data.balance, data.currency ?? 'USD');
+        console.info('[Gradiator] Authenticated via local FastAPI backend.');
+      } catch (err) {
+        // ── Tier 3: Offline fallback ────────────────────────────────────────
+        console.error('[Gradiator] Auth error — playing offline with local balance:', err);
+        setSessionId(null);
+        emitBalanceUpdate(10000, 'USD');
+      }
+    };
+    authenticate();
+  }, []);
 
+  // ── Bet controls ──────────────────────────────────────────────────────────
+  const increaseBet = () => setCurrentBetIndex(prev => Math.min(prev + 1, BET_LEVELS.length - 1));
+  const decreaseBet = () => setCurrentBetIndex(prev => Math.max(0, prev - 1));
 
-
+  // ── Auto-spin controls ────────────────────────────────────────────────────
   const startAutoSpin = (count: number | null) => {
     autoSpinRef.current = true;
     autoSpinRemainingRef.current = count;
     setAutoSpinRemaining(count);
     setAutoSpinEnabled(true);
     setAutoSpinModalOpen(false);
-
-    if (!isSpinning) {
-      handleSpinStart();
-    }
+    if (!isSpinning) handleSpinStart();
   };
 
-  const stopAutoSpin = () => {
+  const stopAutoSpin = useCallback(() => {
     autoSpinRef.current = false;
     autoSpinRemainingRef.current = null;
     setAutoSpinRemaining(null);
     setAutoSpinEnabled(false);
-  };
+  }, []);
 
-
-
-  /**
-   * Called when the Spin Button is clicked in ControlPanel.
-   */
-  const handleSpinStart = () => {
+  // ── Spin start ────────────────────────────────────────────────────────────
+  const handleSpinStart = useCallback(async () => {
     if (isSpinning) return;
     setLastFreeSpinsWon(0);
     setStatusMessage('Good luck!');
 
-    // Check if we can spin (Balance or Free Spins)
     const isFreeSpin = freeSpinsRemaining > 0;
-    
-    // Select Strip based on Free Spin Status
     const activeStrips = isFreeSpin ? BONUS_REEL_STRIPS : REEL_STRIPS;
-    setCurrentStrips(activeStrips); // Update UI/Logic state
+    setCurrentStrips(activeStrips);
 
     const effectiveBetMultiplier = isFreeSpin ? bonusStartBetMultiplierRef.current : 1;
     const effectiveBet = currentBet * effectiveBetMultiplier;
 
-    if (isFreeSpin || balance >= effectiveBet) {
-      // Deduct Bet if NOT free spin
-      if (!isFreeSpin) {
-          setBalance(prev => prev - effectiveBet);
-      } else {
-          setFreeSpinsRemaining(prev => prev - 1);
-          // Apply the "2x Start" only on the first free spin after purchase.
-          bonusStartBetMultiplierRef.current = 1;
+    if (!isFreeSpin && balance < effectiveBet) {
+      alert('Insufficient Funds!');
+      return;
+    }
+
+    setWinResult(null);
+    setIsSpinning(true);
+    emitRoundActive(true); // notify stake-engine listeners
+
+    // ── Use server if session exists, else fall back to local ──────────────
+    if (sessionId) {
+      try {
+        const res = await fetch(`${API_URL}/play`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            session_id: sessionId,
+            amount: effectiveBet,
+            mode: isFreeSpin ? 'freespin' : 'base',
+          }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail ?? 'Spin failed');
+        }
+
+        const data: PlayResponse = await res.json();
+        const winRes = mapToWinResult(data);
+
+        // Sync state from server response + emit stake-engine balance event
+        setBalance(data.balance);
+        setFreeSpinsRemaining(data.free_spins_remaining);
+        emitBalanceUpdate(data.balance, 'USD');
+
+        pendingWinRef.current = data.total_win;
+        pendingWinResultRef.current = winRes;
+        pendingFreeSpinsRef.current = data.free_spins_awarded;
+
+        const finalStops = data.stop_indices;
+        setLastStopIndices(finalStops);
+
+        if (slotMachineRef.current) {
+          slotMachineRef.current.spin(finalStops, spinCount);
+        }
+
+        // End round asynchronously (fire-and-forget)
+        fetch(`${API_URL}/endround`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_id: sessionId }),
+        }).catch(() => {});
+
+      } catch (err) {
+        console.error('[Gradiator] Play error:', err);
+        setIsSpinning(false);
+        alert(String(err));
       }
+    } else {
+      // ── Offline fallback (no backend) ──────────────────────────────────
+      const { calculateWin } = await import('./slot/winLogic');
+      if (!isFreeSpin) setBalance(prev => prev - effectiveBet);
+      else setFreeSpinsRemaining(prev => prev - 1);
 
-      setLastWin(0); 
-      setIsSpinning(true);
-
-      // 1. Generate Random Results (Stop Indices 0-length for each reel)
       const stopIndices = activeStrips.map(strip => Math.floor(Math.random() * strip.length));
-      setLastStopIndices(stopIndices);
-
-      // 2. Calculate the Result IMMEDIATELY using the ACTIVE STRIPS
       const result = calculateWin(stopIndices, effectiveBet, activeStrips, isFreeSpin);
-      
-      // ✅ Use adjustedStopIndices (from anti-dry logic) if available, else original
-      const finalStopIndices = result.adjustedStopIndices || stopIndices;
-      
+      const finalStops = result.adjustedStopIndices || stopIndices;
+
       pendingWinRef.current = result.totalWin;
       pendingWinResultRef.current = result;
       pendingFreeSpinsRef.current = result.freeSpins || 0;
 
-      // Clear previous win display
-      setWinResult(null);
-
-      // 3. Trigger the Animation
+      setLastStopIndices(finalStops);
       if (slotMachineRef.current) {
-        // Use the FINAL indices for the visual spin
-        slotMachineRef.current.spin(finalStopIndices, spinCount);
-        setLastStopIndices(finalStopIndices); // Update state with final positions
+        slotMachineRef.current.spin(finalStops, spinCount);
       }
-    } else {
-      alert("Insufficient Funds!");
     }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSpinning, freeSpinsRemaining, balance, currentBet, sessionId, spinCount]);
 
-  /**
-   * Called when the SlotMachine finishes its animation.
-   * Updates balance with any winnings.
-   */
-  const handleSpinComplete = () => {
+  // ── Spin complete ─────────────────────────────────────────────────────────
+  const handleSpinComplete = useCallback(() => {
     setIsSpinning(false);
+    emitRoundActive(false); // round finished — re-enable UI via event
     const winAmount = pendingWinRef.current;
     const wonFreeSpins = pendingFreeSpinsRef.current;
     const result = pendingWinResultRef.current;
-    
-    // Add Winnings
+
     if (winAmount > 0) {
-      setBalance(prev => prev + winAmount);
       setLastWin(winAmount);
-      setWinResult(result); // Show visualizations
+      setWinResult(result);
     }
 
-    // Add Free Spins
-    if (wonFreeSpins > 0) {
-        setFreeSpinsRemaining(prev => prev + wonFreeSpins);
-        setLastFreeSpinsWon(wonFreeSpins);
-    }
+    if (wonFreeSpins > 0) setLastFreeSpinsWon(wonFreeSpins);
 
-    // Update dynamic title message
     if (winAmount > 0 || wonFreeSpins > 0) {
-      const messageParts: string[] = [];
-      if (winAmount > 0) {
-        messageParts.push(`You have won $${winAmount.toLocaleString('en-US')}`);
-      }
-      if (wonFreeSpins > 0) {
-        messageParts.push(`You have received ${wonFreeSpins} free spins`);
-      }
-      setStatusMessage(messageParts.join(' • '));
+      const parts: string[] = [];
+      if (winAmount > 0) parts.push(`You have won $${winAmount.toLocaleString('en-US')}`);
+      if (wonFreeSpins > 0) parts.push(`You received ${wonFreeSpins} free spins`);
+      setStatusMessage(parts.join(' • '));
     } else {
       setStatusMessage('GRADIATOR');
     }
 
-    // Auto-spin logic for regular auto-spin
+    // Auto-spin continuation
     if (autoSpinRef.current) {
-      // (Existing auto-spin logic retained)
       if (autoSpinRemainingRef.current !== null) {
-        const nextRemaining = (autoSpinRemainingRef.current ?? 0) - 1;
-        autoSpinRemainingRef.current = nextRemaining;
-        setAutoSpinRemaining(nextRemaining);
-
-        if (nextRemaining <= 0) {
-          stopAutoSpin();
-          return;
-        }
+        const next = (autoSpinRemainingRef.current ?? 0) - 1;
+        autoSpinRemainingRef.current = next;
+        setAutoSpinRemaining(next);
+        if (next <= 0) { stopAutoSpin(); return; }
       }
-
-      const isFreeSpinAvailable = freeSpinsRemaining + wonFreeSpins > 0;
-      const effectiveBetMultiplier = isFreeSpinAvailable ? bonusStartBetMultiplierRef.current : 1;
-      const effectiveBet = currentBet * effectiveBetMultiplier;
-      const nextBalance = balance + winAmount;
-
-      if (isFreeSpinAvailable || nextBalance >= effectiveBet) {
-        setTimeout(() => {
-          if (!autoSpinRef.current) return;
-          handleSpinStart();
-        }, 600);
+      const fsLeft = freeSpinsRemaining + wonFreeSpins;
+      const nextBal = balance + winAmount;
+      const enoughFunds = fsLeft > 0 || nextBal >= currentBet;
+      if (enoughFunds) {
+        setTimeout(() => { if (autoSpinRef.current) handleSpinStart(); }, 600);
       } else {
         stopAutoSpin();
       }
-    } 
-    // Automatic Free Spin Trigger (if not already handled by auto-spin)
-    else if (freeSpinsRemaining + wonFreeSpins > 0) {
-       setTimeout(() => {
-         handleSpinStart();
-       }, 1500); // 1.5s delay between free spins
+    } else if (freeSpinsRemaining + wonFreeSpins > 0) {
+      setTimeout(() => handleSpinStart(), 1500);
     }
-  };
+  }, [balance, currentBet, freeSpinsRemaining, handleSpinStart, stopAutoSpin]);
+
+  // ─────────────────────────────────────────────────────────────────────────
 
   return (
-    <div 
+    <div
       className="app-layout"
       style={{
         width: '90vw',
@@ -220,56 +334,59 @@ function App() {
         boxSizing: 'border-box',
         overflow: 'hidden',
         backgroundImage: `url(${ASSETS.background})`,
-        backgroundSize: 'cover', 
+        backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
         display: 'flex',
-        flexDirection: 'column', // BACK TO VERTICAL
+        flexDirection: 'column',
         justifyContent: 'center',
-        alignItems: 'center' 
+        alignItems: 'center',
       }}
     >
-
-
-     
-
-      {/* 1. SLOT MACHINE BOARD */}
+      {/* ── Slot Machine Board ─────────────────────────────────────────── */}
       <div className="flex items-stretch justify-center w-full max-w-[1400px]">
-        
-
         <div className="w-[80%] lg:w-[45%] max-w-[1000px] relative">
-            <GoldenFrame width="100%" maxWidth="100%" isBonus={freeSpinsRemaining > 0}>
-                <SlotMachine 
-                ref={slotMachineRef}
-                onSpinComplete={handleSpinComplete}
-                boostActive={boostActive}
-                winResult={winResult}
-                reelStrips={currentStrips}
-                />
-                <WinEffects winResult={winResult} stopIndices={lastStopIndices} freeSpinsWon={lastFreeSpinsWon} />
-            </GoldenFrame>
+          <GoldenFrame width="100%" maxWidth="100%" isBonus={freeSpinsRemaining > 0}>
+            <SlotMachine
+              ref={slotMachineRef}
+              onSpinComplete={handleSpinComplete}
+              boostActive={boostActive}
+              winResult={winResult}
+              reelStrips={currentStrips}
+            />
+            <WinEffects
+              winResult={winResult}
+              stopIndices={lastStopIndices}
+              freeSpinsWon={lastFreeSpinsWon}
+            />
+          </GoldenFrame>
         </div>
-
-        {/* SidebarControlPanel Removed */}
       </div>
 
-      {/* 2. CONTROL BAR (Under the frame) */}
-
-      
-      <ControlPanel 
+      {/* ── Control Bar ───────────────────────────────────────────────── */}
+      <ControlPanel
         balance={balance}
         currentBet={currentBet}
+        betLevels={BET_LEVELS}
+        currentBetIndex={currentBetIndex}
         spinning={isSpinning}
         autoSpinEnabled={autoSpinEnabled}
-        freeSpinsRemaining={freeSpinsRemaining} // ✅ ADDED
+        freeSpinsRemaining={freeSpinsRemaining}
         onSpin={handleSpinStart}
         onIncreaseBet={increaseBet}
         onDecreaseBet={decreaseBet}
         onBuyBonus={() => setBuyBonusOpen(true)}
-        onToggleAutoSpin={() => autoSpinModalOpen ? setAutoSpinModalOpen(false) : (autoSpinEnabled ? stopAutoSpin() : setAutoSpinModalOpen(true))}
+        onToggleAutoSpin={() =>
+          autoSpinModalOpen
+            ? setAutoSpinModalOpen(false)
+            : autoSpinEnabled
+            ? stopAutoSpin()
+            : setAutoSpinModalOpen(true)
+        }
         onOpenPaytable={() => setPayTableOpen(true)}
       />
 
+      {/* ── Modals ────────────────────────────────────────────────────── */}
       <BuyBonusModal
         open={buyBonusOpen}
         onClose={() => setBuyBonusOpen(false)}
@@ -279,14 +396,11 @@ function App() {
         onDecreaseBet={decreaseBet}
         onBuy={(choice: BuyBonusChoice) => {
           const cost = currentBet * choice.costMultiplier;
-          if (isSpinning) return;
-          if (freeSpinsRemaining > 0) return; // avoid buying mid-bonus
-          if (balance < cost) {
-            alert('Insufficient Funds!');
+          if (isSpinning || freeSpinsRemaining > 0 || balance < cost) {
+            if (balance < cost) alert('Insufficient Funds!');
             return;
           }
-
-          setBalance((prev) => prev - cost);
+          setBalance(prev => prev - cost);
           setFreeSpinsRemaining(choice.freeSpins);
           bonusStartBetMultiplierRef.current = choice.startBetMultiplier;
           setBuyBonusOpen(false);
@@ -303,10 +417,8 @@ function App() {
         open={payTableOpen}
         onClose={() => setPayTableOpen(false)}
       />
-
     </div>
   );
 }
 
 export default App;
-

@@ -11,7 +11,7 @@ interface GoldenFrameProps {
 
 const GoldenFrame: React.FC<GoldenFrameProps> = ({ 
   children, 
-  width = '50%', 
+  width = '550%', 
   maxWidth = '1250px', 
   height = 'auto', 
   maxHeight = '60vh',

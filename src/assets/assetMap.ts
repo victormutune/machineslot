@@ -11,8 +11,8 @@ import symTrophy from "./symbols/Trophy.png";
 import symWhistle from "./symbols/Whistle.png";
 
 // Theme
-import background from "./theme/background1.png";
-import frame from "./theme/frame_final.png";
+import background from "./theme/BACKGROUND.png";
+import frame from "./theme/framee.png";
 
 export const SYMBOLS = [
   // High Value Symbols

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { type WinningLine } from '../../utils/winLogic';
+import { type WinningLine, type WinningPosition } from '../../slot/winLogic';
 
 interface PaylineOverlayProps {
   winningLines: WinningLine[];
@@ -58,7 +58,7 @@ const PaylineOverlay: React.FC<PaylineOverlayProps> = ({ winningLines, onPhaseCh
 
       winningLines.forEach((line, i) => {
         if (!line.path) return;
-        const pts = line.path.map(pos => {
+        const pts = line.path.map((pos: WinningPosition) => {
           const el = document.querySelector<HTMLElement>(`[data-grid-coord="${pos.col},${pos.row}"]`);
           if (el) {
             found++;

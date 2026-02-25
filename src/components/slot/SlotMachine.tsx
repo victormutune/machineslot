@@ -1,10 +1,10 @@
 import React, { useRef, useImperativeHandle, forwardRef } from 'react';
 import Reel, { type ReelHandle } from './Reel';
 import WinEffects from './WinEffects';
-import { type WinResult } from '../utils/winLogic';
-import { getReelWinningRows, hasAnyWin } from '../utils/winningHelper';
-import { REEL_STRIPS } from '../assets/assetMap';
-import PaylineOverlay from './ui/PaylineOverlay';
+import { type WinResult } from '../../slot/winLogic';
+import { getReelWinningRows, hasAnyWin } from '../../slot/winningHelper';
+import { REEL_STRIPS } from '../../assets/assetMap';
+import PaylineOverlay from '../ui/PaylineOverlay';
 
 export interface SlotMachineHandle {
   spin: (stopIndices: number[], spins?: number, reelOrders?: number[][]) => void;
@@ -14,7 +14,7 @@ interface SlotMachineProps {
   onSpinComplete?: () => void;
   boostActive?: boolean;
   winResult: WinResult | null;
-  reelStrips?: number[][]; // Changed to array of arrays
+  reelStrips?: number[][];
 }
 
 const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>(({
@@ -41,25 +41,21 @@ const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>(({
       setIsSpinning(true);
       setCurrentStopIndices(stopIndices);
 
-      // Trigger spins on all reels
       reelRefs.forEach((reelRef, index) => {
         if (reelRef.current) {
-           const delay = index * 0.1; // Staggered start
-           
+           const delay = index * 0.1;
            reelRef.current.spin(
-             spinCount + (index * 0.5), // Add some randomness/stagger to spin count
+             spinCount + (index * 0.5),
              stopIndices[index],
              delay,
-             boostActive ? 2 : 1 // Faster if boost is active
+             boostActive ? 2 : 1
            );
         }
       });
 
-      // Calculate total duration roughly
-      // (base spins * duration) + (landing delay)
-      const baseDuration = (spinCount + 4) * 0.15; // approximate
+      const baseDuration = (spinCount + 4) * 0.15;
       const landingDelay = 1.0; 
-      const totalTime = (baseDuration + landingDelay) * 1000 + 500; // + buffer
+      const totalTime = (baseDuration + landingDelay) * 1000 + 500;
 
       setTimeout(() => {
         setIsSpinning(false);
@@ -68,10 +64,8 @@ const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>(({
     }
   }));
 
-  // Track payline animation phase to sync win amount display
   const [paylinePhase, setPaylinePhase] = React.useState<'flowing' | 'complete'>('flowing');
 
-  // Winning rows for highlighting
   const reelWinningRows = getReelWinningRows(winResult);
   const hasWin = hasAnyWin(winResult);
 
@@ -83,14 +77,13 @@ const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>(({
             key={index}
             ref={reelRef}
             rows={4}
-            colIndex={index} // ✅ Pass column index
-            order={reelStrips[index]} // Use the individual strip for this reel
+            colIndex={index}
+            order={reelStrips[index]}
             winningRows={reelWinningRows[index]}
             isSpinning={isSpinning}
             hasAnyWin={hasWin}
           />
         ))}
-        {/* Overlay for Paylines */}
         {!isSpinning && winResult && (
            <div className="absolute inset-0 pointer-events-none z-20">
                <PaylineOverlay
