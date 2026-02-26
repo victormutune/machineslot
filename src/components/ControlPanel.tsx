@@ -8,6 +8,8 @@ interface ControlPanelProps {
   spinning: boolean;
   autoSpinEnabled: boolean;
   freeSpinsRemaining: number;
+  isMuted: boolean;
+  onToggleMute: () => void;
   onSpin: () => void;
   onIncreaseBet: () => void;
   onDecreaseBet: () => void;
@@ -24,6 +26,8 @@ export default function SlotControlPanel({
   spinning,
   autoSpinEnabled,
   freeSpinsRemaining,
+  isMuted,
+  onToggleMute,
   onSpin,
   onIncreaseBet,
   onDecreaseBet,
@@ -33,6 +37,7 @@ export default function SlotControlPanel({
 }: ControlPanelProps) {
   const atMin = currentBetIndex === 0;
   const atMax = currentBetIndex === betLevels.length - 1;
+  const displayBet = currentBet;
 
   return (
     <>
@@ -89,31 +94,54 @@ export default function SlotControlPanel({
           {/* Bottom Row */}
           <div className="flex items-center justify-between w-full px-6 mb-2">
             {/* Info / Paytable */}
-            <button
-              onClick={onOpenPaytable}
-              className="w-14 h-8 rounded-full border border-white/20 bg-black/40 flex items-center justify-center text-white italic font-serif hover:bg-white/10"
-            >
-              i
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={onOpenPaytable}
+                className="w-14 h-8 rounded-full border border-white/20 bg-black/40 flex items-center justify-center text-white italic font-serif hover:bg-white/10"
+              >
+                i
+              </button>
+            </div>
 
-            {/* Free Spins / Buy Bonus */}
-            <button
-              onClick={freeSpinsRemaining > 0 ? undefined : onBuyBonus}
-              disabled={spinning || freeSpinsRemaining > 0}
-              className={`h-10 rounded-full border border-white/20 bg-black/40 flex flex-col items-center justify-center hover:bg-white/10 active:scale-95 transition ${freeSpinsRemaining > 0 ? 'w-32 border-yellow-400/50' : 'w-16'}`}
-            >
-              {freeSpinsRemaining > 0 ? (
-                <div className="flex flex-col items-center">
-                  <span className="text-[9px] text-yellow-400 font-bold leading-none">FREE SPINS</span>
-                  <span className="text-lg text-white font-black leading-none">{freeSpinsRemaining}</span>
-                </div>
-              ) : (
-                <div className="flex -space-x-1">
-                  <div className="w-3 h-3 rounded-full border border-white bg-yellow-400" />
-                  <div className="w-3 h-3 rounded-full border border-white bg-yellow-400" />
-                </div>
-              )}
-            </button>
+            {/* Free Spins / Buy Bonus & Mute */}
+            <div className="flex items-end gap-2">
+              <button
+                onClick={onToggleMute}
+                className="w-10 h-10 rounded-full border border-white/20 bg-black/40 flex items-center justify-center text-white hover:bg-white/10 active:scale-95 transition"
+              >
+                {isMuted ? (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                    <line x1="23" y1="9" x2="17" y2="15"></line>
+                    <line x1="17" y1="9" x2="23" y2="15"></line>
+                  </svg>
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                  </svg>
+                )}
+              </button>
+
+              <button
+                onClick={freeSpinsRemaining > 0 ? undefined : onBuyBonus}
+                disabled={spinning || freeSpinsRemaining > 0}
+                className={`h-10 rounded-full border border-white/20 bg-black/40 flex flex-col items-center justify-center hover:bg-white/10 active:scale-95 transition ${freeSpinsRemaining > 0 ? 'w-32 border-yellow-400/50' : 'w-16'}`}
+              >
+                {freeSpinsRemaining > 0 ? (
+                  <div className="flex flex-col items-center">
+                    <span className="text-[9px] text-yellow-400 font-bold leading-none">FREE SPINS</span>
+                    <span className="text-lg text-white font-black leading-none">{freeSpinsRemaining}</span>
+                  </div>
+                ) : (
+                  <div className="flex -space-x-1">
+                    <div className="w-3 h-3 rounded-full border border-white bg-yellow-400" />
+                    <div className="w-3 h-3 rounded-full border border-white bg-yellow-400" />
+                  </div>
+                )}
+              </button>
+            </div>
 
             {/* Auto Spin */}
             <button
@@ -131,7 +159,9 @@ export default function SlotControlPanel({
           {/* Footer: Credit / Bet */}
           <div className="flex gap-4 text-xs font-bold text-[#f2d27a] tracking-wider mb-2">
             <span>CREDIT {formatBalance(balance)}</span>
-            <span>BET {formatBet(currentBet)}</span>
+            <span className="flex items-center gap-1">
+              BET {formatBet(displayBet)}
+            </span>
           </div>
         </div>
       </div>
@@ -141,8 +171,29 @@ export default function SlotControlPanel({
       <div className="hidden lg:flex w-full justify-center p-4 fixed bottom-0 left-0 z-50">
         <div className="relative flex items-center justify-center w-full max-w-3xl">
 
-          {/* Buy Bonus Button */}
-          <div className="absolute left-0 z-20 transform -translate-x-4">
+
+          {/* Sound Control + Buy Bonus Button Stack */}
+          <div className="absolute left-0 z-20 transform -translate-x-4 flex flex-col items-center gap-2 -translate-y-6">
+            <button
+              onClick={onToggleMute}
+              className="w-10 h-10 rounded-full border border-white/20 bg-black/60 flex items-center justify-center text-white hover:bg-white/10 active:scale-95 transition-all shadow-lg backdrop-blur-sm"
+              title={isMuted ? "Unmute Sound" : "Mute Sound"}
+            >
+              {isMuted ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                  <line x1="23" y1="9" x2="17" y2="15"></line>
+                  <line x1="17" y1="9" x2="23" y2="15"></line>
+                </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                </svg>
+              )}
+            </button>
+
             <button
               onClick={onBuyBonus}
               disabled={spinning}
@@ -185,7 +236,9 @@ export default function SlotControlPanel({
                 <div className="flex items-center bg-[#0f1012] rounded-md h-12 border border-white/5 relative mr-12 overflow-hidden">
                   <div className="flex flex-col justify-center px-4 min-w-[110px]">
                     <span className="text-[9px] text-gray-400 font-bold tracking-wider uppercase">Current Bet</span>
-                    <span className="text-lg font-bold text-yellow-400">{formatBet(currentBet)}</span>
+                    <span className="text-lg font-bold text-yellow-400 flex items-center gap-2">
+                      {formatBet(displayBet)}
+                    </span>
                   </div>
                   <div className="flex flex-col h-full border-l border-white/10">
                     <button

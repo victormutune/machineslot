@@ -1,4 +1,5 @@
-import React from 'react';
+import React from 'react'
+import { ASSETS } from '../../assets/assetMap';
 
 interface GoldenFrameProps {
   children: React.ReactNode;
@@ -6,66 +7,70 @@ interface GoldenFrameProps {
   maxWidth?: string;
   height?: string;
   maxHeight?: string;
-  isBonus?: boolean;
 }
 
-const GoldenFrame: React.FC<GoldenFrameProps> = ({ 
-  children, 
-  width = '550%', 
-  maxWidth = '1250px', 
-  height = 'auto', 
-  maxHeight = '60vh',
-  isBonus = false
+const GoldenFrame: React.FC<GoldenFrameProps> = ({
+  children,
+  width = '550%',
+  maxWidth = '1250px',
+  height = 'auto',
+  maxHeight = '100vh'
 }) => {
   return (
-    <div 
+    <div
       style={{
         position: 'relative',
-        width, 
+        width,
         maxWidth,
-        height, 
+        height,
         maxHeight,
         aspectRatio: '5/4', // Match 5 reels x 4 rows
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
         transition: 'all 0.5s ease',
-        
-        // Fancy Border & Background - Football Green Theme
-        border: isBonus ? '5px ridge #FFD700' : '4px ridge #166534', 
-        borderRadius: '15px',
-        background: isBonus 
-          ? 'linear-gradient(to bottom, #2a1a05, #493105)' 
-          : 'linear-gradient(to bottom, rgba(66, 30, 10, 0.9), rgba(20, 10, 5, 0.95))', 
-        boxShadow: isBonus 
-          ? `
-            0 0 0 2px #FFD700,
-            0 0 0 5px #ff4500,
-            0 0 40px rgba(255, 215, 0, 0.6),
-            inset 0 0 30px rgba(255, 69, 0, 0.5)
-          `
-          : `
-            0 0 0 2px #000000,
-            0 0 0 5px #000000,
-            0 0 25px rgba(0, 0, 0, 0.8),
-            inset 0 0 20px rgba(0, 0, 0, 0.8)
-          `,
-        padding: '8px', 
+        padding: '0', // Reset padding on wrapper
       }}
     >
+      {/* ── Background Behind Reels (Optional but good) ── */}
       <div style={{
-         width: '100%', 
-         height: '100%',
-         backgroundColor: 'rgba(0,0,0,0.8)',
-         borderRadius: '10px',
-         boxShadow: 'inset 0 0 20px rgba(0,0,0,0.8)',
-         display: 'flex',
-         justifyContent: 'center',
-         alignItems: 'center',
-         padding: '4px'
+        position: 'absolute',
+        width: '80%',
+        height: '80%',
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        borderRadius: '10px',
+        boxShadow: 'inset 0 0 0px rgba(0,0,0,0.8)',
+        zIndex: 10, // Back layer
+      }} />
+
+      {/* ── Slot Machine Reels (Children) ── */}
+      <div style={{
+        position: 'relative',
+        width: '80%',
+        height: '80%',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 20, // Middle layer
+        padding: '4px'
       }}>
-         {children}
+        {children}
       </div>
+
+      {/* ── The Golden Frame Over Everything ── */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        backgroundImage: `url(${ASSETS.frame})`,
+        backgroundSize: '100% 100%',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        pointerEvents: 'none', // Allow clicking through the clear parts of the frame image
+        zIndex: 50, // Front layer
+      }} />
     </div>
   );
 };

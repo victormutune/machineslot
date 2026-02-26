@@ -65,7 +65,17 @@ def play(req: PlayRequest) -> PlayResponse:
 
     is_free_spin = data["free_spins"] > 0 or req.mode == "freespin"
     active_strips = BONUS_REEL_STRIPS if is_free_spin else REEL_STRIPS
-    bet = req.amount
+    
+    # Calculate effective bet taking feature buys into account
+    effective_multiplier = 1
+    if req.feature_buy == "free_kick":
+        effective_multiplier = 100
+    elif req.feature_buy == "extra_time":
+        effective_multiplier = 300
+    elif req.feature_buy == "bonus_boost":
+        effective_multiplier = 2
+        
+    bet = req.amount * effective_multiplier
 
     # ── Balance / free-spin check ─────────────────────────────────────────────
     if is_free_spin:
@@ -86,9 +96,10 @@ def play(req: PlayRequest) -> PlayResponse:
     raw_stops = random_stop_indices(active_strips)
     result: SpinResult = calculate_win(
         stop_indices=raw_stops,
-        bet=bet,
+        bet=req.amount,  # Win calculations are based on the BASE bet, not the effective bet
         reel_strips=active_strips,
         is_free_spin=is_free_spin,
+        feature_buy=req.feature_buy,
     )
 
     # ── Credit winnings ───────────────────────────────────────────────────────

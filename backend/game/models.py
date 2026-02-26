@@ -26,6 +26,7 @@ class PlayRequest(BaseModel):
     session_id: str
     amount: float = Field(gt=0, description="Bet amount (must be positive)")
     mode: str = "base"  # "base" | "freespin"
+    feature_buy: str = "none"
 
 
 class WinPosition(BaseModel):

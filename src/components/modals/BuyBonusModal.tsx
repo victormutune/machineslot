@@ -9,7 +9,7 @@ export type BuyBonusChoice = {
   freeSpins: number;
   costMultiplier: number;
   startBetMultiplier: number;
-  accent: 'green' | 'purple';
+  accent: 'green' | 'purple' | 'blue';
 };
 
 const money = (value: number) =>
@@ -37,21 +37,30 @@ export default function BuyBonusModal({
   const choices: BuyBonusChoice[] = useMemo(
     () => [
       {
-        id: 'goal_rush',
-        title: 'Goal Rush',
-        subtitle: '8 Free Spins',
+        id: 'bonus_boost' as any,
+        title: 'Bonus Boost',
+        subtitle: 'Activate to increase 3x the chance of triggering the Bonus Round',
+        freeSpins: 0,
+        costMultiplier: 2,
+        startBetMultiplier: 1,
+        accent: 'blue',
+      },
+      {
+        id: 'free_kick' as any,
+        title: 'Free Kick',
+        subtitle: 'Bonus Buy with 8 Free Spins',
         freeSpins: 8,
         costMultiplier: 100,
         startBetMultiplier: 1,
         accent: 'green',
       },
       {
-        id: 'counter_attack',
-        title: 'Counter Attack',
-        subtitle: '12 Free Spins + 2x Start',
+        id: 'extra_time' as any,
+        title: 'Extra Time',
+        subtitle: 'Bonus Buy with 12 Free Spins',
         freeSpins: 12,
-        costMultiplier: 250,
-        startBetMultiplier: 2,
+        costMultiplier: 300,
+        startBetMultiplier: 1,
         accent: 'purple',
       },
     ],
@@ -76,7 +85,7 @@ export default function BuyBonusModal({
       />
 
       {/* Modal */}
-      <div className="relative w-[92%] max-w-[520px] rounded-[18px] bg-gradient-to-b from-[#131316] to-[#0e0e10] shadow-[0_30px_80px_rgba(0,0,0,0.75)] ring-1 ring-[#daa520]/35">
+      <div className="relative w-[92%] max-w-[720px] rounded-[18px] bg-gradient-to-b from-[#131316] to-[#0e0e10] shadow-[0_30px_80px_rgba(0,0,0,0.75)] ring-1 ring-[#daa520]/35">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 rounded-t-[18px] bg-[#c6a31f]/85">
           <div className="text-[#3a2b05] font-extrabold text-lg">Buy Bonus</div>
@@ -128,7 +137,7 @@ export default function BuyBonusModal({
           </div>
 
           {/* Bonus cards */}
-          <div className="mt-5 grid grid-cols-2 gap-4">
+          <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4">
             {choices.map((c) => {
               const accent =
                 c.accent === 'green'
@@ -137,6 +146,13 @@ export default function BuyBonusModal({
                       glow: 'shadow-[0_0_0_1px_rgba(44,255,119,0.25),0_18px_45px_rgba(0,0,0,0.5)]',
                       pill: 'bg-[#1c6c2f]/40',
                       title: 'text-[#d9ffe7]',
+                    }
+                  : c.accent === 'blue'
+                  ? {
+                      ring: 'ring-1 ring-[#1f8fff]/35',
+                      glow: 'shadow-[0_0_0_1px_rgba(31,143,255,0.25),0_18px_45px_rgba(0,0,0,0.5)]',
+                      pill: 'bg-[#0f46a6]/40',
+                      title: 'text-[#cce8ff]',
                     }
                   : {
                       ring: 'ring-1 ring-[#b86bff]/35',

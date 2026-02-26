@@ -94,12 +94,13 @@ def _calculate_once(
             for pos in scatter_positions:
                 all_winning_positions.add(f"{pos.col},{pos.row}")
 
-            # Scatter pays 0 coins, grants free spins
-            free_spins = (
-                2 if scatter_count == 3 else
-                3 if scatter_count == 4 else
-                4   # 5+ scatters
-            )
+            # Only cap Free Spins at 12 if somehow more scatters land
+            if scatter_count == 3:
+                free_spins = 8
+            elif scatter_count == 4:
+                free_spins = 10
+            elif scatter_count >= 5:
+                free_spins = 12
 
             winning_lines.append(WinLine(
                 symbol_id=SCATTER_ID,
@@ -176,35 +177,80 @@ def calculate_win(
     bet: float,
     reel_strips: list[list[int]],
     is_free_spin: bool = False,
+    feature_buy: str = "none",
     max_attempts: int = 3,
 ) -> SpinResult:
     """
     Anti-dry-spin wrapper around _calculate_once.
+    Also handles feature_buy logic:
+    - free_kick: forces 3 scatters
+    - extra_time: forces 5 scatters
+    - bonus_boost: best of 3 tries for scatters
     Tries up to `max_attempts` times; keeps the first result
-    that produces a win, or the last attempt if none do.
-    Mirrors calculateWin() in winLogic.ts.
+    that produces a win, or the last attempt if none do (for base spins).
     """
-    result: SpinResult | None = None
+
     final_stops = stop_indices[:]
+    
+    # Check if we need to force scatters
+    if feature_buy in ("free_kick", "extra_time"):
+        required_scatters = 5 if feature_buy == "extra_time" else 3
+        
+        # Pick random columns to drop scatters into
+        cols_for_scatters = random.sample(range(COLS), required_scatters)
+        
+        for col in cols_for_scatters:
+            strip = reel_strips[col]
+            # Find all positions of scatter on this reel
+            scatter_indices = [idx for idx, sym in enumerate(strip) if sym == SCATTER_ID]
+            
+            if scatter_indices:
+                target_scatter_idx = random.choice(scatter_indices)
+                # target_scatter_idx is the index on the strip we want to appear in the visible window
+                # the visible window spans row 0 to ROWS-1 from the stop_index
+                row_offset = random.randint(0, ROWS - 1)
+                
+                # We want: (stop_index + row_offset) % strip_len == target_scatter_idx
+                # So: stop_index = (target_scatter_idx - row_offset) % strip_len
+                new_stop = (target_scatter_idx - row_offset) % len(strip)
+                final_stops[col] = new_stop
+        
+        # We only calculate once for feature buys
+        res = _calculate_once(final_stops, bet, reel_strips, is_free_spin)
+        res.stop_indices = final_stops
+        return res
+
+    best_result: SpinResult | None = None
+    best_stops: list[int] = []
 
     for attempt in range(max_attempts):
         current_stops = (
-            stop_indices
+            final_stops
             if attempt == 0
             else [
                 (s + random.randint(1, 3)) % len(reel_strips[col])
-                for col, s in enumerate(stop_indices)
+                for col, s in enumerate(final_stops)
             ]
         )
         result = _calculate_once(current_stops, bet, reel_strips, is_free_spin)
         final_stops = current_stops
 
-        if result.total_win > 0:
+        if best_result:
+            if result.free_spins > best_result.free_spins or (result.free_spins == best_result.free_spins and result.total_win > best_result.total_win):
+                best_result = result
+                best_stops = final_stops[:]
+        else:
+             best_result = result
+             best_stops = final_stops[:]
+
+        if feature_buy != "bonus_boost" and result.total_win > 0:
+            break
+        elif feature_buy == "bonus_boost" and result.free_spins > 0:
             break
 
-    assert result is not None
-    result.stop_indices = final_stops
-    return result
+    assert best_result is not None
+    best_result.stop_indices = best_stops
+    return best_result
 
 
 def random_stop_indices(reel_strips: list[list[int]]) -> list[int]:

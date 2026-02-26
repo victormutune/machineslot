@@ -116,9 +116,9 @@ const calculateOnce = (
       const scatterWin = 0;
 
       freeSpins =
-        scatterCount === 3 ? 2 :
-        scatterCount === 4 ? 3 :
-        4; // 5+ scatters = 4 spins
+        scatterCount === 3 ? 8 :
+        scatterCount === 4 ? 10 :
+        12; // 5+ scatters = 12 spins
 
       totalWin += scatterWin;
 
@@ -199,30 +199,92 @@ export const calculateWin = (
   stopIndices: number[],
   bet: number,
   reelStrips: number[][],
-  isFreeSpin: boolean = false
+  isFreeSpin: boolean = false,
+  featureBuy: string = 'none'
 ): WinResult => {
 
   let attempts = 0;
   let result: WinResult;
-  let finalStopIndices = stopIndices;
+  let finalStopIndices = [...stopIndices];
+  
+  // Scatter symbol
+  const SCATTER = SYMBOLS.find(s =>
+    s.name.toLowerCase().includes('football')
+  );
+  const SCATTER_ID = SCATTER?.id ?? -1;
+
+  // If Free Kick or Extra Time, force 3 or 5 scatters respectively
+  if (featureBuy === 'free_kick' || featureBuy === 'extra_time') {
+    const requiredScatters = featureBuy === 'extra_time' ? 5 : 3;
+    let placedScatters = 0;
+    
+    // Pick requiredScatters number of specific random columns to place scatters on
+    const availableCols = [0, 1, 2, 3, 4].sort(() => 0.5 - Math.random());
+    const targetCols = availableCols.slice(0, requiredScatters);
+
+    // Map each target column to a new stop index that will force a scatter into the view
+    finalStopIndices = finalStopIndices.map((stopIdx, col) => {
+      if (targetCols.includes(col)) {
+        // Find all scatter indices on this reel strip
+        const strip = reelStrips[col];
+        const scatterIndices = strip
+          .map((sym, idx) => (sym === SCATTER_ID ? idx : -1))
+          .filter(idx => idx !== -1);
+          
+        if (scatterIndices.length > 0) {
+           const targetIndex = scatterIndices[Math.floor(Math.random() * scatterIndices.length)];
+           // We need stopIdx + rowOffset to equal targetIndex % stripLength, for rowOffset 0 to 3.
+           const rowOffset = Math.floor(Math.random() * ROWS);
+           placedScatters++;
+           let newStopIdx = (targetIndex - rowOffset) % strip.length;
+           if (newStopIdx < 0) newStopIdx += strip.length;
+           return newStopIdx;
+        }
+      }
+      return stopIdx; // Keep original random stop or try to modify if no scatter
+    });
+    
+    return calculateOnce(finalStopIndices, bet, reelStrips, isFreeSpin);
+  }
+
+  // Regular Spin / Bonus Boost / Hit Control
+  
+  // If we have Bonus Boost, we give it up to 3 extra chances to land 3+ scatters.
+  let bestResult: WinResult | null = null;
+  let bestStopIndices: number[] = [];
 
   do {
     const adjustedStops =
       attempts === 0
-        ? stopIndices
-        : stopIndices.map((s, col) => {
+        ? finalStopIndices
+        : finalStopIndices.map((s, col) => {
             const stripLength = reelStrips[col].length;
             return (s + Math.floor(Math.random() * 3) + 1) % stripLength;
           });
 
     result = calculateOnce(adjustedStops, bet, reelStrips, isFreeSpin);
     finalStopIndices = adjustedStops;
+    
+    // Keep track of the best result in case we are doing Bonus Boost
+    if (!bestResult || result.freeSpins > bestResult.freeSpins || (result.freeSpins === bestResult.freeSpins && result.totalWin > bestResult.totalWin)) {
+        bestResult = result;
+        bestStopIndices = [...finalStopIndices];
+    }
+    
+    // If not bonus boost, stop on first win or after 3 dry spins.
+    // If bonus boost, stop early if we hit free spins, otherwise use all 3 attempts.
+    if (featureBuy !== 'bonus_boost' && result.totalWin > 0) {
+        break;
+    } else if (featureBuy === 'bonus_boost' && result.freeSpins > 0) {
+        break;
+    }
+
     attempts++;
 
-  } while (result!.totalWin === 0 && attempts < 3);
+  } while (attempts < 3);
 
   return {
-    ...result!,
-    adjustedStopIndices: finalStopIndices
+    ...bestResult!,
+    adjustedStopIndices: bestStopIndices
   };
 };

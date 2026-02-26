@@ -3,6 +3,7 @@ import { ASSETS, REEL_STRIPS, BONUS_REEL_STRIPS } from './assets/assetMap';
 import SlotMachine, { type SlotMachineHandle } from './components/slot/SlotMachine';
 import ControlPanel from './components/ControlPanel';
 import GoldenFrame from './components/ui/GoldenFrame';
+import Mascot from './components/ui/Mascot';
 import WinEffects from './components/slot/WinEffects';
 import BuyBonusModal, { type BuyBonusChoice } from './components/modals/BuyBonusModal';
 import AutoSpinModal from './components/modals/AutoSpinModal';
@@ -94,6 +95,9 @@ function App() {
   const [_statusMessage, setStatusMessage] = useState<string>('GRADIATOR');
   const [payTableOpen, setPayTableOpen] = useState(false);
   const [boostActive] = useState(false);
+  
+  // Audio State
+  const [isMuted, setIsMuted] = useState(false);
 
   // Track which visual strips to use (for SlotMachine animation)
   const [currentStrips, setCurrentStrips] = useState<number[][]>(REEL_STRIPS);
@@ -107,6 +111,45 @@ function App() {
   const autoSpinRemainingRef = useRef<number | null>(null);
   // Holds the StakeEngineClient instance when launched via a real casino operator URL.
   const rgsClientRef = useRef<StakeEngineClient | null>(null);
+
+  // ── Audio References ───────────────────────────────────────────────────────
+  const bgMusicRef = useRef<HTMLAudioElement | null>(null);
+  const spinStartAudioRef = useRef<HTMLAudioElement | null>(null);
+  const spinStopAudioRef = useRef<HTMLAudioElement | null>(null);
+  const audioInitializedRef = useRef(false);
+
+  // Initialize Audio Elements
+  useEffect(() => {
+    bgMusicRef.current = new Audio(ASSETS.audio.bgMusic);
+    bgMusicRef.current.loop = true;
+    bgMusicRef.current.volume = 0.3; // Lower volume for BGM
+
+    spinStartAudioRef.current = new Audio(ASSETS.audio.spinStart);
+    spinStartAudioRef.current.volume = 0.7;
+
+    spinStopAudioRef.current = new Audio(ASSETS.audio.spinStop);
+    spinStopAudioRef.current.volume = 0.7;
+
+    return () => {
+      bgMusicRef.current?.pause();
+      spinStartAudioRef.current?.pause();
+      spinStopAudioRef.current?.pause();
+    };
+  }, []);
+
+  // Sync mute state to audio elements
+  useEffect(() => {
+    if (bgMusicRef.current) bgMusicRef.current.muted = isMuted;
+    if (spinStartAudioRef.current) spinStartAudioRef.current.muted = isMuted;
+    if (spinStopAudioRef.current) spinStopAudioRef.current.muted = isMuted;
+  }, [isMuted]);
+
+  const initAudio = useCallback(() => {
+    if (!audioInitializedRef.current && bgMusicRef.current) {
+      bgMusicRef.current.play().catch(console.error);
+      audioInitializedRef.current = true;
+    }
+  }, []);
 
   // ── Authenticate on mount ──────────────────────────────────────────────────
   // Also subscribe to stake-engine balanceUpdate events so external tools
@@ -185,19 +228,41 @@ function App() {
   }, []);
 
   // ── Spin start ────────────────────────────────────────────────────────────
-  const handleSpinStart = useCallback(async () => {
+  const handleSpinStart = useCallback(async (featureBuy: string = 'none') => {
+    initAudio(); // Ensure audio context is started on first interaction
     if (isSpinning) return;
+    
+    // Play Spin Start Sound
+    if (spinStartAudioRef.current) {
+      spinStartAudioRef.current.currentTime = 0;
+      spinStartAudioRef.current.play().catch(console.error);
+    }
+    
     setLastFreeSpinsWon(0);
     setStatusMessage('Good luck!');
 
-    const isFreeSpin = freeSpinsRemaining > 0;
+    // For Bonus Buys (free_kick / extra_time), we trigger a base spin internally
+    // that forces the scatters to land. So it counts as a base spin for the math engine.
+    const isFreeSpin = freeSpinsRemaining > 0 && featureBuy === 'none';
     const activeStrips = isFreeSpin ? BONUS_REEL_STRIPS : REEL_STRIPS;
     setCurrentStrips(activeStrips);
+    
+    // Determine the effective bet cost
+    let effectiveBetMultiplier = 1;
+    if (isFreeSpin) {
+      effectiveBetMultiplier = bonusStartBetMultiplierRef.current;
+    } else if (featureBuy === 'free_kick') {
+      effectiveBetMultiplier = 100;
+    } else if (featureBuy === 'extra_time') {
+      effectiveBetMultiplier = 300;
+    } else if (featureBuy === 'bonus_boost') {
+      // Bonus boost implies 2x cost only if not buying a feature
+      effectiveBetMultiplier = 2;
+    }
 
-    const effectiveBetMultiplier = isFreeSpin ? bonusStartBetMultiplierRef.current : 1;
-    const effectiveBet = currentBet * effectiveBetMultiplier;
+    const effectiveCost = currentBet * effectiveBetMultiplier;
 
-    if (!isFreeSpin && balance < effectiveBet) {
+    if (!isFreeSpin && balance < effectiveCost) {
       alert('Insufficient Funds!');
       return;
     }
@@ -214,8 +279,9 @@ function App() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             session_id: sessionId,
-            amount: effectiveBet,
+            amount: currentBet, // Base bet is passed. Backend multiplies if feature_buy is used.
             mode: isFreeSpin ? 'freespin' : 'base',
+            feature_buy: featureBuy
           }),
         });
 
@@ -258,11 +324,11 @@ function App() {
     } else {
       // ── Offline fallback (no backend) ──────────────────────────────────
       const { calculateWin } = await import('./slot/winLogic');
-      if (!isFreeSpin) setBalance(prev => prev - effectiveBet);
+      if (!isFreeSpin) setBalance(prev => prev - effectiveCost);
       else setFreeSpinsRemaining(prev => prev - 1);
 
       const stopIndices = activeStrips.map(strip => Math.floor(Math.random() * strip.length));
-      const result = calculateWin(stopIndices, effectiveBet, activeStrips, isFreeSpin);
+      const result = calculateWin(stopIndices, currentBet, activeStrips, isFreeSpin, featureBuy);
       const finalStops = result.adjustedStopIndices || stopIndices;
 
       pendingWinRef.current = result.totalWin;
@@ -307,8 +373,15 @@ function App() {
         const next = (autoSpinRemainingRef.current ?? 0) - 1;
         autoSpinRemainingRef.current = next;
         setAutoSpinRemaining(next);
-        if (next <= 0) { stopAutoSpin(); return; }
+        if (next < 0) { stopAutoSpin(); return; }
       }
+      
+      // Play Spin Stop Sound
+      if (spinStopAudioRef.current) {
+          spinStopAudioRef.current.currentTime = 0;
+          spinStopAudioRef.current.play().catch(console.error);
+      }
+      
       const fsLeft = freeSpinsRemaining + wonFreeSpins;
       const nextBal = balance + winAmount;
       const enoughFunds = fsLeft > 0 || nextBal >= currentBet;
@@ -317,8 +390,16 @@ function App() {
       } else {
         stopAutoSpin();
       }
-    } else if (freeSpinsRemaining + wonFreeSpins > 0) {
-      setTimeout(() => handleSpinStart(), 1500);
+    } else {
+        // Play Spin Stop Sound
+        if (spinStopAudioRef.current) {
+            spinStopAudioRef.current.currentTime = 0;
+            spinStopAudioRef.current.play().catch(console.error);
+        }
+        
+        if (freeSpinsRemaining + wonFreeSpins > 0) {
+            setTimeout(() => handleSpinStart(), 1500);
+        }
     }
   }, [balance, currentBet, freeSpinsRemaining, handleSpinStart, stopAutoSpin]);
 
@@ -345,8 +426,8 @@ function App() {
     >
       {/* ── Slot Machine Board ─────────────────────────────────────────── */}
       <div className="flex items-stretch justify-center w-full max-w-[1400px]">
-        <div className="w-[80%] lg:w-[45%] max-w-[1000px] relative">
-          <GoldenFrame width="100%" maxWidth="100%" isBonus={freeSpinsRemaining > 0}>
+        <div className="w-[80%] lg:w-[50%] max-w-[1000px] relative">
+          <GoldenFrame width="100%" maxWidth="100%">
             <SlotMachine
               ref={slotMachineRef}
               onSpinComplete={handleSpinComplete}
@@ -360,6 +441,8 @@ function App() {
               freeSpinsWon={lastFreeSpinsWon}
             />
           </GoldenFrame>
+          
+          <Mascot isWinning={!!winResult && winResult.totalWin > 0} />
         </div>
       </div>
 
@@ -372,7 +455,9 @@ function App() {
         spinning={isSpinning}
         autoSpinEnabled={autoSpinEnabled}
         freeSpinsRemaining={freeSpinsRemaining}
-        onSpin={handleSpinStart}
+        isMuted={isMuted}
+        onToggleMute={() => setIsMuted(prev => !prev)}
+        onSpin={() => handleSpinStart('none')}
         onIncreaseBet={increaseBet}
         onDecreaseBet={decreaseBet}
         onBuyBonus={() => setBuyBonusOpen(true)}
@@ -400,10 +485,14 @@ function App() {
             if (balance < cost) alert('Insufficient Funds!');
             return;
           }
-          setBalance(prev => prev - cost);
-          setFreeSpinsRemaining(choice.freeSpins);
+          // Do NOT statically set spins and balance here anymore,
+          // because we are forcing a real spin that visually lands scatters
+          // which will report the win and free spins.
           bonusStartBetMultiplierRef.current = choice.startBetMultiplier;
           setBuyBonusOpen(false);
+          
+          // Trigger the spin with the feature id.
+          handleSpinStart(choice.id);
         }}
       />
 

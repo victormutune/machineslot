@@ -12,9 +12,21 @@ import symWhistle from "./symbols/Whistle.png";
 
 // Theme
 import background from "./theme/BACKGROUND.png";
-import frame from "./theme/framee.png";
+import frame from "./theme/football_slot_frame.png";
+
+// Audio
+import bgMusic from "./mascot/lab_slots_bgm.mp3";
+import spinStartSound from "./mascot/spin_start.mp3";
+import spinStopSound from "./mascot/spin_stop.mp3";
+
+// Mascot
+import mos1 from "./mascot/mos1.png";
+import mos2 from "./mascot/mos2.png";
+import mos3 from "./mascot/mos3.png";
+import mos4 from "./mascot/mos4.png";
 
 export const SYMBOLS = [
+// ... (omitting symbols array replacement for brevity, maintaining original content)
   // High Value Symbols
   { 
     id: 0, 
@@ -144,4 +156,10 @@ export const BONUS_REEL_STRIPS = [BONUS_REEL_1, BONUS_REEL_2, BONUS_REEL_3, BONU
 export const ASSETS = {
   background,
   frame,
+  mascot: [mos1, mos2, mos3, mos4],
+  audio: {
+    bgMusic,
+    spinStart: spinStartSound,
+    spinStop: spinStopSound
+  }
 };
