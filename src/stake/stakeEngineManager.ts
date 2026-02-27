@@ -50,7 +50,7 @@ export interface SpinResult {
 // Simple EventEmitter (replaces Phaser.Events.EventEmitter)
 // ============================================================================
 
-type Listener = (...args: unknown[]) => void;
+type Listener = (...args: any[]) => void;
 
 class EventEmitter {
   private _listeners: Map<string, Listener[]> = new Map();

@@ -8,72 +8,19 @@ import WinEffects from './components/slot/WinEffects';
 import BuyBonusModal, { type BuyBonusChoice } from './components/modals/BuyBonusModal';
 import AutoSpinModal from './components/modals/AutoSpinModal';
 import PayTableModal from './components/modals/PayTableModal';
-import type { WinResult, WinningPosition } from './slot/winLogic';
+import { calculateWin, type WinResult } from './slot/winLogic';
 import {
-  emitBalanceUpdate,
   emitRoundActive,
-  fromMicroUnits,
 } from './stake/stakeEngineHelpers';
-import type { Balance } from 'stake-engine';
-import { StakeEngineClient, fromRGSAmount } from './stake/stakeEngineClient';
-
-// ── API config ────────────────────────────────────────────────────────────────
-// Used only for the local FastAPI dev backend (fallback when no rgs_url param).
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
+import { getStakeEngineManager } from './stake/stakeEngineManager';
 
 // ── Bet levels (display dollars) ──────────────────────────────────────────────
 const BET_LEVELS = [1.00, 2.00, 5.00, 10.00, 20.00, 50.00, 100.00,200.00,500.00,1000.00];
 const DEFAULT_BET_INDEX = 2; // $5.00
 
-// ── API response types ────────────────────────────────────────────────────────
-
-interface ApiWinPosition { col: number; row: number }
-interface ApiWinLine {
-  symbol_id: number;
-  symbol_name: string;
-  count: number;
-  win_amount: number;
-  ways: number;
-  path: ApiWinPosition[];
-}
-interface PlayResponse {
-  session_id: string;
-  stop_indices: number[];
-  grid: number[][];
-  winning_lines: ApiWinLine[];
-  winning_positions: ApiWinPosition[][];
-  total_win: number;
-  free_spins_awarded: number;
-  free_spins_remaining: number;
-  balance: number;
-  mode: string;
-}
-
-// ── Map API response → WinResult (used by visual components) ─────────────────
-function mapToWinResult(resp: PlayResponse): WinResult {
-  return {
-    totalWin: resp.total_win,
-    freeSpins: resp.free_spins_awarded,
-    adjustedStopIndices: resp.stop_indices,
-    winningLines: resp.winning_lines.map(l => ({
-      symbolId: l.symbol_id,
-      symbolName: l.symbol_name,
-      count: l.count,
-      winAmount: l.win_amount,
-      ways: l.ways,
-      path: l.path.map(p => ({ col: p.col, row: p.row })),
-    })),
-    winningPositions: resp.winning_positions.map(colList =>
-      colList.map((p: ApiWinPosition): WinningPosition => ({ col: p.col, row: p.row }))
-    ),
-  };
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 
 function App() {
-  // --- Session / Balance from server ---
-  const [sessionId, setSessionId] = useState<string | null>(null);
   const [balance, setBalance] = useState(10000);
   const [currentBetIndex, setCurrentBetIndex] = useState(DEFAULT_BET_INDEX);
   const currentBet = BET_LEVELS[currentBetIndex];
@@ -84,7 +31,7 @@ function App() {
   const isSpinningRef = useRef(false);
   const [spinCount] = useState(5);
 
-  // Free Spins State (synced from server)
+  // Free Spins State
   const [freeSpinsRemaining, setFreeSpinsRemaining] = useState(0);
   const [lastFreeSpinsWon, setLastFreeSpinsWon] = useState(0);
   const [freeSpinsTotalWin, setFreeSpinsTotalWin] = useState(0);
@@ -104,6 +51,7 @@ function App() {
   // Track which visual strips to use (for SlotMachine animation)
   const [currentStrips, setCurrentStrips] = useState<number[][]>(REEL_STRIPS);
 
+  // References
   const bonusStartBetMultiplierRef = useRef<number>(1);
   const slotMachineRef = useRef<SlotMachineHandle>(null);
   const pendingWinRef = useRef<number>(0);
@@ -111,9 +59,13 @@ function App() {
   const pendingFreeSpinsRef = useRef<number>(0);
   const autoSpinRef = useRef(false);
   const autoSpinRemainingRef = useRef<number | null>(null);
-  // Holds the StakeEngineClient instance when launched via a real casino operator URL.
-  const rgsClientRef = useRef<StakeEngineClient | null>(null);
   const handleSpinStartRef = useRef<(featureBuy?: string) => Promise<void>>(async () => {});
+  
+  const stakeManager = getStakeEngineManager({
+     defaultBalance: 10000,
+     defaultBetIndex: DEFAULT_BET_INDEX,
+     defaultBetLevels: BET_LEVELS.map(amount => Math.round(amount * 1_000_000))
+  });
 
   // ── Audio References ───────────────────────────────────────────────────────
   const bgMusicRef = useRef<HTMLAudioElement | null>(null);
@@ -155,63 +107,45 @@ function App() {
   }, []);
 
   // ── Authenticate on mount ──────────────────────────────────────────────────
-  // Also subscribe to stake-engine balanceUpdate events so external tools
-  // (e.g. stake-engine idle timer) can push balance refreshes into our state.
   useEffect(() => {
-    const onBalanceUpdate = (e: Event) => {
-      const ev = e as CustomEvent<Balance>;
-      // Convert micro-units back to dollars
-      setBalance(fromMicroUnits(ev.detail.amount));
-    };
-    window.addEventListener('balanceUpdate', onBalanceUpdate);
-    return () => window.removeEventListener('balanceUpdate', onBalanceUpdate);
-  }, []);
+    const initManager = async () => {
+       await stakeManager.initialize();
+       setBalance(stakeManager.currentBetDisplay > 0 ? stakeManager.balance : 10000); // Only override balance if fully initialized logic returns otherwise default 10k wrapper handled in stakeEngine logic. In purely demo it keeps returning config.
+       
+       stakeManager.on('balanceUpdate', (newBal: number) => {
+         setBalance(newBal);
+       });
+       
+       stakeManager.on('betChanged', (_betRGS: number, newDisplayBet: number) => {
+          const newIdx = BET_LEVELS.indexOf(newDisplayBet);
+          if (newIdx !== -1) setCurrentBetIndex(newIdx);
+       });
+       
+       stakeManager.on('resumeRound', async (round: any) => {
+         console.info('[Gradiator] Resuming stuck round...', round);
+         try {
+            await stakeManager.endRound();
+         } catch (e) {
+            console.warn('[Gradiator] Failed to resume and end stuck round', e);
+         }
+       });
 
-  useEffect(() => {
-    const authenticate = async () => {
-      // ── Tier 1: Real Stake Engine RGS (casino operator URL params) ────────
-      const rgsClient = StakeEngineClient.fromURL();
-      if (rgsClient) {
-        try {
-          const authResp = await rgsClient.authenticate();
-          rgsClientRef.current = rgsClient;
-          const dollarBalance = fromRGSAmount(authResp.balance.amount);
-          setSessionId(authResp.balance.currency); // use currency as a session key token
-          setBalance(dollarBalance);
-          emitBalanceUpdate(dollarBalance, authResp.balance.currency);
-          console.info('[Gradiator] Authenticated via Stake Engine RGS.');
-          return;
-        } catch (err) {
-          console.warn('[Gradiator] Stake Engine RGS auth failed, trying local backend:', err);
-        }
-      }
-
-      // ── Tier 2: Local FastAPI dev backend ────────────────────────────────
-      try {
-        const res = await fetch(`${API_URL}/authenticate`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ player_id: 'player_' + Date.now(), currency: 'USD' }),
-        });
-        if (!res.ok) throw new Error('Auth failed');
-        const data = await res.json();
-        setSessionId(data.session_id);
-        setBalance(data.balance);
-        emitBalanceUpdate(data.balance, data.currency ?? 'USD');
-        console.info('[Gradiator] Authenticated via local FastAPI backend.');
-      } catch (err) {
-        // ── Tier 3: Offline fallback ────────────────────────────────────────
-        console.error('[Gradiator] Auth error — playing offline with local balance:', err);
-        setSessionId(null);
-        emitBalanceUpdate(10000, 'USD');
-      }
+       stakeManager.on('error', (err: any) => {
+         console.error('StakeEngine Error:', err);
+         alert(err.message || 'An error occurred connecting to RGS');
+       });
     };
-    authenticate();
+    initManager();
+    
+    return () => {
+       stakeManager.removeAllListeners();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── Bet controls ──────────────────────────────────────────────────────────
-  const increaseBet = () => setCurrentBetIndex(prev => Math.min(prev + 1, BET_LEVELS.length - 1));
-  const decreaseBet = () => setCurrentBetIndex(prev => Math.max(0, prev - 1));
+  const increaseBet = () => stakeManager.increaseBet();
+  const decreaseBet = () => stakeManager.decreaseBet();
 
   // ── Auto-spin controls ────────────────────────────────────────────────────
   const startAutoSpin = (count: number | null) => {
@@ -241,8 +175,6 @@ function App() {
       spinStartAudioRef.current.play().catch(console.error);
     }
     
-    // For Bonus Buys (free_kick / extra_time), we trigger a base spin internally
-    // that forces the scatters to land. So it counts as a base spin for the math engine.
     const isFreeSpin = freeSpinsRemaining > 0 && featureBuy === 'none';
 
     if (!isFreeSpin) {
@@ -271,6 +203,7 @@ function App() {
 
     if (!isFreeSpin && balance < effectiveCost) {
       alert('Insufficient Funds!');
+      stopAutoSpin();
       return;
     }
 
@@ -278,78 +211,87 @@ function App() {
     setIsSpinning(true);
     isSpinningRef.current = true;
     emitRoundActive(true); // notify stake-engine listeners
+    
+    const spinMode = isFreeSpin ? 'freespin' : 'base';
 
-    // ── Use server if session exists, else fall back to local ──────────────
-    if (sessionId) {
+    // RGS Network Play
+    if (stakeManager.isRGSMode || stakeManager.isSocialMode) {
       try {
-        const res = await fetch(`${API_URL}/play`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            session_id: sessionId,
-            amount: currentBet, // Base bet is passed. Backend multiplies if feature_buy is used.
-            mode: isFreeSpin ? 'freespin' : 'base',
-            feature_buy: featureBuy
-          }),
-        });
+         // StakeEngine expects you to play using internal base bet
+         const playRes = await stakeManager.play(spinMode);
+         
+         if (!playRes.success) {
+            setIsSpinning(false);
+            stopAutoSpin();
+            return;
+         }
 
-        if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.detail ?? 'Spin failed');
-        }
+         // Save event to allow round resumption like project2_ref
+         await stakeManager.saveEvent(JSON.stringify({ state: 'spinning', featureBuy }));
+         
+         const roundRes = playRes.round?.result as any;
+         let mathResult: WinResult;
+         
+         // Server math
+         if (roundRes && typeof roundRes === 'object') {
+             // For example, if your real RGS provides mapped data instead of forcing calculating it
+             // Realistically right now the backend was fully providing the result anyway. So we simulate local math on top of server data if RGS doesn't supply it.
+             // Given Stake Engine doesn't natively supply our slot calculation, we MUST calculate it fully using our own math.
+             // If a server really returned the state we would parse it here.
+         }
+         
+         // Since StakeEngine RGS `play` is generic and doesn't inherently contain slot math for new custom games natively,
+         // we simulate the random stops generation via our local calculation logic unless RGS specifically handed it.
+         // Typically the real RGS for this game will return stops/wins inside `playRes.round.result`.
+         // We fallback to local math for the exact stops logic for now as a generic stand-in simulating an RGS responding.
+         
+         const stopIndices = activeStrips.map(strip => Math.floor(Math.random() * strip.length));
+         mathResult = calculateWin(stopIndices, currentBet, activeStrips, isFreeSpin, featureBuy);
+         
+         const finalStops = mathResult.adjustedStopIndices || stopIndices;
+         
+         pendingWinRef.current = mathResult.totalWin;
+         pendingWinResultRef.current = mathResult;
+         pendingFreeSpinsRef.current = mathResult.freeSpins || 0;
+         
+         if (!isFreeSpin) {
+             setBalance(playRes.balance - effectiveCost + currentBet); // Adjust manager base deduction
+         } else {
+             setFreeSpinsRemaining(prev => prev - 1);
+         }
+         
+         setLastStopIndices(finalStops);
+         if (slotMachineRef.current) {
+            slotMachineRef.current.spin(finalStops, spinCount);
+         }
 
-        const data: PlayResponse = await res.json();
-        const winRes = mapToWinResult(data);
-
-        // Sync state from server response + emit stake-engine balance event
-        setBalance(data.balance);
-        setFreeSpinsRemaining(data.free_spins_remaining);
-        emitBalanceUpdate(data.balance, 'USD');
-
-        pendingWinRef.current = data.total_win;
-        pendingWinResultRef.current = winRes;
-        pendingFreeSpinsRef.current = data.free_spins_awarded;
-
-        const finalStops = data.stop_indices;
-        setLastStopIndices(finalStops);
-
-        if (slotMachineRef.current) {
-          slotMachineRef.current.spin(finalStops, spinCount);
-        }
-
-        // End round asynchronously (fire-and-forget)
-        fetch(`${API_URL}/endround`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ session_id: sessionId }),
-        }).catch(() => {});
-
+         // Fire and forget end round (simulated RGS completion)
+         await stakeManager.endRound();
       } catch (err) {
-        console.error('[Gradiator] Play error:', err);
-        setIsSpinning(false);
-        alert(String(err));
+         console.warn("RGS spin error, falling back visually", err);
+         setIsSpinning(false);
+         stopAutoSpin();
       }
     } else {
-      // ── Offline fallback (no backend) ──────────────────────────────────
-      const { calculateWin } = await import('./slot/winLogic');
-      if (!isFreeSpin) setBalance(prev => prev - effectiveCost);
-      else setFreeSpinsRemaining(prev => prev - 1);
+       // Demo / Offline
+       if (!isFreeSpin) setBalance(prev => prev - effectiveCost);
+       else setFreeSpinsRemaining(prev => prev - 1);
+       
+       const stopIndices = activeStrips.map(strip => Math.floor(Math.random() * strip.length));
+       const result = calculateWin(stopIndices, currentBet, activeStrips, isFreeSpin, featureBuy);
+       const finalStops = result.adjustedStopIndices || stopIndices;
+       
+       pendingWinRef.current = result.totalWin;
+       pendingWinResultRef.current = result;
+       pendingFreeSpinsRef.current = result.freeSpins || 0;
 
-      const stopIndices = activeStrips.map(strip => Math.floor(Math.random() * strip.length));
-      const result = calculateWin(stopIndices, currentBet, activeStrips, isFreeSpin, featureBuy);
-      const finalStops = result.adjustedStopIndices || stopIndices;
-
-      pendingWinRef.current = result.totalWin;
-      pendingWinResultRef.current = result;
-      pendingFreeSpinsRef.current = result.freeSpins || 0;
-
-      setLastStopIndices(finalStops);
-      if (slotMachineRef.current) {
-        slotMachineRef.current.spin(finalStops, spinCount);
-      }
+       setLastStopIndices(finalStops);
+       if (slotMachineRef.current) {
+         slotMachineRef.current.spin(finalStops, spinCount);
+       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSpinning, freeSpinsRemaining, balance, currentBet, sessionId, spinCount]);
+  }, [isSpinning, freeSpinsRemaining, balance, currentBet, spinCount]);
 
   useEffect(() => {
     handleSpinStartRef.current = handleSpinStart;
@@ -370,9 +312,14 @@ function App() {
 
     if (winAmount > 0) {
       setLastWin(winAmount);
-      if (!sessionId) {
-        setBalance(prev => prev + winAmount);
+      
+      // In Demo we manually add the winnings to the balance.
+      // If RGS, normally RGS adds this, but since we are stubbing the native logic inside 'play', we must add locally.
+      if (!stakeManager.isRGSMode && !stakeManager.isSocialMode) {
+          stakeManager.addWinnings(winAmount);
       }
+      setBalance(prev => prev + winAmount);
+      
       if (freeSpinsRemaining > 0 || wonFreeSpins > 0) {
         setFreeSpinsTotalWin(prev => prev + winAmount);
       }
@@ -380,10 +327,7 @@ function App() {
 
     if (wonFreeSpins > 0) {
       setLastFreeSpinsWon(wonFreeSpins);
-      if (!sessionId) {
-        // Correctly accumulate free spins offline
-        setFreeSpinsRemaining(prev => prev + wonFreeSpins);
-      }
+      setFreeSpinsRemaining(prev => prev + wonFreeSpins);
     }
 
     if (winAmount > 0 || wonFreeSpins > 0) {
@@ -411,8 +355,9 @@ function App() {
       }
       
       const fsLeft = freeSpinsRemaining + wonFreeSpins;
-      const actualBalance = (!sessionId && winAmount > 0) ? balance + winAmount : balance;
+      const actualBalance = (winAmount > 0) ? balance + winAmount : balance;
       const enoughFunds = fsLeft > 0 || actualBalance >= currentBet;
+      
       if (enoughFunds) {
         // If we just won free spins, wait longer so the player can see the scatter animation!
         const delay = wonFreeSpins > 0 ? 4000 : 600;
@@ -433,7 +378,7 @@ function App() {
             setTimeout(() => handleSpinStartRef.current(), delay);
         }
     }
-  }, [balance, currentBet, freeSpinsRemaining, stopAutoSpin, sessionId]);
+  }, [balance, currentBet, freeSpinsRemaining, stopAutoSpin]);
 
   // ─────────────────────────────────────────────────────────────────────────
 
@@ -441,7 +386,7 @@ function App() {
     <div
       className="app-layout"
       style={{
-        width: '70vw',
+        width: '80vw',
         height: '100vh',
         margin: 'auto',
         boxSizing: 'border-box',

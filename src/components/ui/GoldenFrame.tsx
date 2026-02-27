@@ -37,7 +37,7 @@ const GoldenFrame: React.FC<GoldenFrameProps> = ({
         position: 'absolute',
         width: '80%',
         height: '80%',
-        backgroundColor: 'rgba(0,0,0,0.8)',
+        backgroundColor: 'rgba(0,0,0)',
         borderRadius: '10px',
         boxShadow: 'inset 0 0 0px rgba(0,0,0,0.8)',
         zIndex: 10, // Back layer
@@ -52,7 +52,7 @@ const GoldenFrame: React.FC<GoldenFrameProps> = ({
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 20, // Middle layer
-        padding: '4px'
+        padding: '5px'
       }}>
         {children}
       </div>
