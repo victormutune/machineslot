@@ -9,11 +9,13 @@ import symK from "./symbols/K.png";
 import symQ from "./symbols/Gloves_transparent.png";
 import symTrophy from "./symbols/Trophy.png";
 import symWhistle from "./symbols/Whistle.png";
+import symBonus from "./symbols/Bonus.png";
 
 // Theme
 import background from "./theme/BACKGROUND.png";
 import frame from "./theme/football_slot_frame.png";
-
+import Back from "./theme/Back.png";
+import BACKG from "./theme/BACKG.png";
 // Audio
 import bgMusic from "./mascot/lab_slots_bgm.mp3";
 import spinStartSound from "./mascot/spin_start.mp3";
@@ -37,6 +39,7 @@ export const SYMBOLS = [
   { 
     id: 4, 
     image: symFootball, 
+    bonusImage: symBonus,
     name: "Football",
     payouts: { 3: 0, 4: 0, 5: 0 } 
   },
@@ -155,6 +158,8 @@ export const BONUS_REEL_STRIPS = [BONUS_REEL_1, BONUS_REEL_2, BONUS_REEL_3, BONU
 
 export const ASSETS = {
   background,
+  Back,
+  BACKG,
   frame,
   mascot: [mos1, mos2, mos3, mos4],
   audio: {

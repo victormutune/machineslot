@@ -8,6 +8,7 @@ interface ControlPanelProps {
   spinning: boolean;
   autoSpinEnabled: boolean;
   freeSpinsRemaining: number;
+  freeSpinsTotalWin?: number;
   isMuted: boolean;
   onToggleMute: () => void;
   onSpin: () => void;
@@ -26,6 +27,7 @@ export default function SlotControlPanel({
   spinning,
   autoSpinEnabled,
   freeSpinsRemaining,
+  freeSpinsTotalWin = 0,
   isMuted,
   onToggleMute,
   onSpin,
@@ -227,7 +229,14 @@ export default function SlotControlPanel({
                 </div>
               </div>
 
-              <div className="flex-1" />
+              <div className="flex-1 flex justify-center items-center">
+                {freeSpinsRemaining > 0 && freeSpinsTotalWin > 0 && (
+                  <div className="flex flex-col items-center justify-center px-6 py-1 bg-yellow-400/10 border border-yellow-400/30 rounded-full animate-pulse shadow-[0_0_15px_rgba(250,204,21,0.2)]">
+                    <span className="text-[10px] text-yellow-500 font-extrabold tracking-widest uppercase mb-0.5">Free Spins Win</span>
+                    <span className="text-xl font-black text-yellow-300 drop-shadow-md leading-none">{formatBalance(freeSpinsTotalWin)}</span>
+                  </div>
+                )}
+              </div>
 
               {/* Right: Bet display + arrows + spin + autospin */}
               <div className="flex items-center gap-4 pr-18">

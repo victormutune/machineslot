@@ -9,6 +9,7 @@ interface ReelProps {
   winningRows?: boolean[];
   isSpinning?: boolean;
   hasAnyWin?: boolean; 
+  bonusTriggered?: boolean;
 }
 
 export interface ReelHandle {
@@ -21,7 +22,8 @@ const Reel = forwardRef<ReelHandle, ReelProps>(({
   order, 
   winningRows, 
   isSpinning,
-  hasAnyWin = false 
+  hasAnyWin = false,
+  bonusTriggered = false
 }, ref) => {
   const reelRef = useRef<HTMLDivElement>(null);
   const [finalStopIndex, setFinalStopIndex] = useState<number | null>(null);
@@ -121,6 +123,12 @@ const Reel = forwardRef<ReelHandle, ReelProps>(({
             }
           }
 
+          // Determine if this is a triggering scatter
+          const isTriggeringScatter = isWinner && bonusTriggered && symbol.id === 4;
+          const displayImage = isTriggeringScatter && (symbol as any).bonusImage 
+            ? (symbol as any).bonusImage 
+            : symbol.image;
+
           return (
             <div 
               key={`${symbol.id}-${i}`} 
@@ -131,12 +139,12 @@ const Reel = forwardRef<ReelHandle, ReelProps>(({
               }}
             >
               <img 
-                src={symbol.image} 
+                src={displayImage} 
                 alt={symbol.name}
                 className={`
                   w-[70%] h-[70%] object-contain filter drop-shadow-md transition-all duration-500
-                  ${isWinner ? 'animate-bounce-zoom z-20 scale-110 drop-shadow-[0_0_15px_rgba(255,215,0,0.8)]' : ''}
-                  ${shouldDim ? 'opacity-40 grayscale-[0.5] scale-90 blur-[1px]' : ''}
+                  ${isTriggeringScatter ? 'animate-scatter-bonus z-30 scale-125' : isWinner ? 'animate-bounce-zoom z-20 scale-110 drop-shadow-[0_0_15px_rgba(255,215,0,0.8)]' : ''}
+                  ${shouldDim && !isWinner ? 'opacity-40 grayscale-[0.5] scale-90 blur-[1px]' : ''}
                 `}
               />
             </div>

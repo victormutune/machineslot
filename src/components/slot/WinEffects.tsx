@@ -73,12 +73,14 @@ const WinEffects: React.FC<WinEffectsProps> = ({
 
   return (
     <div className="absolute inset-0 pointer-events-none z-50">
-      {/* ================= WIN AMOUNT ================= */}
-      {winResult.totalWin > 0 && showAmount && (
+      {/* ================= WIN AMOUNT & FREE SPINS BADGE ================= */}
+      {(winResult.totalWin > 0 || freeSpinsWon > 0) && showAmount && (
         <div className="absolute inset-0 flex flex-col items-center justify-center animate-in fade-in duration-200">
-          <h2 className="text-5xl font-extrabold text-yellow-300 animate-bounce win-text-glow">
-            ${displayedWin.toLocaleString('en-US')}
-          </h2>
+          {winResult.totalWin > 0 && (
+            <h2 className="text-5xl font-extrabold text-yellow-300 animate-bounce win-text-glow">
+              ${displayedWin.toLocaleString('en-US')}
+            </h2>
+          )}
 
           {freeSpinsWon > 0 && (
             <div className="mt-3 px-4 py-1.5 rounded-full bg-[#141922]/90 border border-[#4ade80] text-[#d1fae5]">

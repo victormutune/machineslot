@@ -68,6 +68,7 @@ const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>(({
 
   const reelWinningRows = getReelWinningRows(winResult);
   const hasWin = hasAnyWin(winResult);
+  const bonusTriggered = !!winResult && winResult.freeSpins > 0;
 
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center">
@@ -82,6 +83,7 @@ const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>(({
             winningRows={reelWinningRows[index]}
             isSpinning={isSpinning}
             hasAnyWin={hasWin}
+            bonusTriggered={bonusTriggered}
           />
         ))}
         {!isSpinning && winResult && (
