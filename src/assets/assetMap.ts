@@ -20,6 +20,7 @@ import BACKG from "./theme/BACKG.png";
 import bgMusic from "./mascot/lab_slots_bgm.mp3";
 import spinStartSound from "./mascot/spin_start.mp3";
 import spinStopSound from "./mascot/spin_stop.mp3";
+import bonusTriggerSound from "./mascot/bonus sound.mp3";
 
 // Mascot
 import mos1 from "./mascot/mos1.png";
@@ -165,6 +166,7 @@ export const ASSETS = {
   audio: {
     bgMusic,
     spinStart: spinStartSound,
-    spinStop: spinStopSound
+    spinStop: spinStopSound,
+    bonusTrigger: bonusTriggerSound
   }
 };

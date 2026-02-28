@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 
 type BonusId = 'goal_rush' | 'counter_attack';
 
@@ -34,6 +34,20 @@ export default function BuyBonusModal({
   onDecreaseBet,
   onBuy,
 }: BuyBonusModalProps) {
+  const [selectedChoice, setSelectedChoice] = useState<BuyBonusChoice | null>(null);
+
+  // Reset selected choice when modal closes
+  useEffect(() => {
+    if (!open) {
+      setSelectedChoice(null);
+    }
+  }, [open]);
+
+  const handleClose = () => {
+    setSelectedChoice(null);
+    onClose();
+  };
+
   const choices: BuyBonusChoice[] = useMemo(
     () => [
       {
@@ -80,7 +94,7 @@ export default function BuyBonusModal({
       <button
         type="button"
         className="absolute inset-0 bg-black/70"
-        onClick={onClose}
+        onClick={handleClose}
         aria-label="Close"
       />
 
@@ -91,7 +105,7 @@ export default function BuyBonusModal({
           <div className="text-[#3a2b05] font-extrabold text-lg">Buy Bonus</div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             className="h-[34px] w-[34px] rounded-full bg-[#2a2a2e]/60 text-white/90 ring-1 ring-white/10 hover:bg-[#323237] active:scale-[0.98] transition"
             aria-label="Close modal"
           >
@@ -100,38 +114,65 @@ export default function BuyBonusModal({
         </div>
 
         <div className="px-5 py-5">
-          {/* Select Bet Amount row */}
-          <div className="rounded-[14px] bg-[#151518]/70 ring-1 ring-white/10 px-4 py-4">
+          {selectedChoice ? (
+            <div className="flex flex-col items-center justify-center py-8">
+              <div className="text-2xl font-extrabold text-[#efece1] mb-2">{selectedChoice.title}</div>
+              <div className="text-[#c9b06a] text-center mb-6 max-w-[400px]">
+                Are you sure you want to purchase <strong className="text-white">{selectedChoice.title}</strong> for{' '}
+                <span className="text-[#f2d27a] font-bold tabular-nums">
+                  {money(currentBet * selectedChoice.costMultiplier)}
+                </span>
+                ?
+              </div>
+              <div className="flex gap-4 w-full max-w-[300px]">
+                <button
+                  type="button"
+                  onClick={() => setSelectedChoice(null)}
+                  className="flex-1 rounded-[12px] bg-[#2a2a2e]/60 py-3 text-[#efece1] font-bold ring-1 ring-white/10 hover:bg-[#323237] transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onBuy(selectedChoice);
+                    setSelectedChoice(null);
+                  }}
+                  className="flex-1 rounded-[12px] bg-[#c6a31f] py-3 text-[#1a1505] font-extrabold shadow-[0_0_20px_rgba(198,163,31,0.4)] hover:brightness-110 transition"
+                >
+                  Confirm
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Select Bet Amount row */}
+              <div className="rounded-[14px] bg-[#151518]/70 ring-1 ring-white/10 px-4 py-4">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="text-[#c9b06a] font-bold">Select Bet Amount</div>
-                <div className="h-[34px] w-[38px] rounded-[10px] bg-[#232327] ring-1 ring-white/10 flex items-center justify-center text-[#d7d7db]">
-                  ▼
-                </div>
               </div>
 
-              <div className="flex items-center gap-3">
-                <div className="rounded-[12px] bg-[#101013] ring-2 ring-[#caa23d]/70 px-5 py-2 text-[#efece1] font-extrabold tabular-nums">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={onDecreaseBet}
+                  className="w-10 h-10 rounded-[10px] bg-[#232327] text-[#efece1] font-bold text-lg hover:bg-[#2c2c32] active:scale-[0.95] transition ring-1 ring-white/10 flex items-center justify-center"
+                  aria-label="Decrease bet"
+                >
+                  −
+                </button>
+                <div className="min-w-[100px] text-center rounded-[12px] bg-[#101013] ring-2 ring-[#caa23d]/70 px-4 py-2 text-[#efece1] font-extrabold tabular-nums">
                   {money(currentBet)}
                 </div>
-                <div className="flex flex-col overflow-hidden rounded-[10px] ring-1 ring-[#caa23d]/40">
-                  <button
-                    type="button"
-                    onClick={onIncreaseBet}
-                    className="h-[18px] w-[30px] bg-[#232327] text-[#efece1] text-[12px] leading-none hover:bg-[#2c2c32] active:scale-[0.98] transition"
-                    aria-label="Increase bet"
-                  >
-                    ▲
-                  </button>
-                  <button
-                    type="button"
-                    onClick={onDecreaseBet}
-                    className="h-[18px] w-[30px] bg-[#1a1a1e] text-[#efece1] text-[12px] leading-none hover:bg-[#24242a] active:scale-[0.98] transition"
-                    aria-label="Decrease bet"
-                  >
-                    ▼
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={onIncreaseBet}
+                  className="w-10 h-10 rounded-[10px] bg-[#232327] text-[#efece1] font-bold text-lg hover:bg-[#2c2c32] active:scale-[0.95] transition ring-1 ring-white/10 flex items-center justify-center"
+                  aria-label="Increase bet"
+                >
+                  +
+                </button>
               </div>
             </div>
           </div>
@@ -167,7 +208,7 @@ export default function BuyBonusModal({
                 <button
                   key={c.id}
                   type="button"
-                  onClick={() => onBuy(c)}
+                  onClick={() => setSelectedChoice(c)}
                   className={[
                     'rounded-[16px] bg-[#121214]/70 px-4 py-4 text-left',
                     'hover:translate-y-[-1px] active:translate-y-0 active:scale-[0.99] transition',
@@ -194,6 +235,8 @@ export default function BuyBonusModal({
           <div className="mt-6 text-center text-sm text-[#c9b06a]">
             Your Balance: <span className="text-[#efece1] font-bold tabular-nums">{money(balance)}</span>
           </div>
+            </>
+          )}
         </div>
       </div>
     </div>

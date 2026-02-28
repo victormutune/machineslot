@@ -35,5 +35,5 @@ export const getReelWinningRows = (
  * Check if there are any wins in the result
  */
 export const hasAnyWin = (winResult: WinResult | null): boolean => {
-  return (winResult?.totalWin ?? 0) > 0;
+  return (winResult?.totalWin ?? 0) > 0 || (winResult?.freeSpins ?? 0) > 0;
 };

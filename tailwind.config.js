@@ -5,7 +5,13 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        supercell: ['SupercellMagic', 'sans-serif'],
+        retro: ['RetroPixel', 'monospace'],
+        sans: ['SupercellMagic', 'sans-serif'], // Set default sans font to supercell
+      },
+    },
   },
   plugins: [],
 }

@@ -1,7 +1,25 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: 'RetroPixel';
+  src: url('/src/assets/fonts/retro-pixel-arcade.otf.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'SupercellMagic';
+  src: url('/src/assets/fonts/supercell-magic_0.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 body {
   background-color: #0c0b0b;
+  font-family: 'SupercellMagic', sans-serif;
+  letter-spacing: 0.05em;
 }
 /* ================= FOOTBALL 3D ================= */
 

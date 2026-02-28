@@ -61,9 +61,9 @@ export default function SlotControlPanel({
             <button
               onClick={onDecreaseBet}
               disabled={spinning || atMin}
-              className="w-12 h-12 rounded-full border-2 border-white/20 bg-black/40 backdrop-blur-sm flex items-center justify-center text-white active:scale-90 transition disabled:opacity-40"
+              className="w-10 sm:w-12 h-10 sm:h-12 rounded-full border-2 border-white/20 bg-black/40 backdrop-blur-sm flex items-center justify-center text-white active:scale-90 transition disabled:opacity-40"
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+              <svg className="w-5 sm:w-6 h-5 sm:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                 <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
             </button>
@@ -72,21 +72,29 @@ export default function SlotControlPanel({
             <button
               onClick={onSpin}
               disabled={spinning}
-              className={`w-24 h-24 rounded-full border-4 border-white/20 bg-white/10 backdrop-blur-md flex items-center justify-center shadow-[0_0_15px_rgba(255,255,255,0.1)] active:scale-95 transition ${spinning ? 'opacity-80' : ''}`}
+              className={`w-18 sm:w-20 h-18 sm:h-20 rounded-full border-4 border-white/20 bg-white/10 backdrop-blur-md flex flex-col items-center justify-center shadow-[0_0_15px_rgba(255,255,255,0.1)] active:scale-95 transition ${spinning ? 'opacity-80' : ''}`}
             >
-              <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`text-white ${spinning ? 'animate-spin' : ''}`}>
-                <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
-                <path d="M21 3v5h-5" />
-              </svg>
+              {freeSpinsRemaining > 0 ? (
+                <>
+                  <span className="text-[8px] sm:text-[10px] font-black text-yellow-400 -mb-1 mt-1">FREE</span>
+                  <span className="text-2xl sm:text-3xl font-black text-white leading-none">{freeSpinsRemaining}</span>
+                  <span className="text-[8px] sm:text-[10px] font-black text-yellow-400 -mt-1 mb-1">SPINS</span>
+                </>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`w-10 sm:w-12 h-10 sm:h-12 text-white ${spinning ? 'animate-spin' : ''}`}>
+                  <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+                  <path d="M21 3v5h-5" />
+                </svg>
+              )}
             </button>
 
             {/* Increase Bet */}
             <button
               onClick={onIncreaseBet}
               disabled={spinning || atMax}
-              className="w-12 h-12 rounded-full border-2 border-white/20 bg-black/40 backdrop-blur-sm flex items-center justify-center text-white active:scale-90 transition disabled:opacity-40"
+              className="w-10 sm:w-12 h-10 sm:h-12 rounded-full border-2 border-white/20 bg-black/40 backdrop-blur-sm flex items-center justify-center text-white active:scale-90 transition disabled:opacity-40"
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+              <svg className="w-5 sm:w-6 h-5 sm:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                 <line x1="12" y1="5" x2="12" y2="19" />
                 <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
@@ -277,12 +285,19 @@ export default function SlotControlPanel({
                   <button
                     onClick={onSpin}
                     disabled={spinning}
-                    className={`w-18 h-18 rounded-full border-4 border-[#2b2d31] bg-[#1a1b1e] flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all ${spinning ? 'opacity-80' : ''}`}
+                    className={`w-18 h-18 rounded-full border-4 border-[#2b2d31] bg-[#1a1b1e] flex flex-col items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all ${spinning ? 'opacity-80' : ''}`}
                   >
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`text-white ${spinning ? 'animate-spin' : ''}`}>
-                      <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
-                      <path d="M21 3v5h-5" />
-                    </svg>
+                    {freeSpinsRemaining > 0 ? (
+                      <>
+                        <span className="text-[8px] font-black text-yellow-400 mt-1">FREE SPINS</span>
+                        <span className="text-[24px] font-black text-white leading-tight">{freeSpinsRemaining}</span>
+                      </>
+                    ) : (
+                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`text-white ${spinning ? 'animate-spin' : ''}`}>
+                        <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+                        <path d="M21 3v5h-5" />
+                      </svg>
+                    )}
                   </button>
 
                   <button

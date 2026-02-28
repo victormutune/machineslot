@@ -8,6 +8,7 @@ import WinEffects from './components/slot/WinEffects';
 import BuyBonusModal, { type BuyBonusChoice } from './components/modals/BuyBonusModal';
 import AutoSpinModal from './components/modals/AutoSpinModal';
 import PayTableModal from './components/modals/PayTableModal';
+import BonusTriggerOverlay from './components/ui/BonusTriggerOverlay';
 import { calculateWin, type WinResult } from './slot/winLogic';
 import {
   emitRoundActive,
@@ -44,6 +45,8 @@ function App() {
   const [_statusMessage, setStatusMessage] = useState<string>('GRADIATOR');
   const [payTableOpen, setPayTableOpen] = useState(false);
   const [boostActive] = useState(false);
+  const [showBonusOverlay, setShowBonusOverlay] = useState(false);
+  const showBonusOverlayRef = useRef(false);
   
   // Audio State
   const [isMuted, setIsMuted] = useState(false);
@@ -167,7 +170,7 @@ function App() {
   // ── Spin start ────────────────────────────────────────────────────────────
   const handleSpinStart = useCallback(async (featureBuy: string = 'none') => {
     initAudio(); // Ensure audio context is started on first interaction
-    if (isSpinningRef.current) return;
+    if (isSpinningRef.current || showBonusOverlayRef.current) return;
     
     // Play Spin Start Sound
     if (spinStartAudioRef.current) {
@@ -330,11 +333,13 @@ function App() {
       setFreeSpinsRemaining(prev => prev + wonFreeSpins);
     }
 
-    if (winAmount > 0 || wonFreeSpins > 0) {
+    if (wonFreeSpins > 0) {
       const parts: string[] = [];
       if (winAmount > 0) parts.push(`You have won $${winAmount.toLocaleString('en-US')}`);
       if (wonFreeSpins > 0) parts.push(`You received ${wonFreeSpins} free spins`);
       setStatusMessage(parts.join(' • '));
+      setShowBonusOverlay(true);
+      showBonusOverlayRef.current = true;
     } else {
       setStatusMessage('GRADIATOR');
     }
@@ -359,9 +364,10 @@ function App() {
       const enoughFunds = fsLeft > 0 || actualBalance >= currentBet;
       
       if (enoughFunds) {
-        // If we just won free spins, wait longer so the player can see the scatter animation!
-        const delay = wonFreeSpins > 0 ? 4000 : 600;
-        setTimeout(() => { if (autoSpinRef.current) handleSpinStartRef.current(); }, delay);
+        if (wonFreeSpins === 0) {
+           setTimeout(() => { if (autoSpinRef.current) handleSpinStartRef.current(); }, 600);
+        }
+        // If we won free spins, handleSpinStart is triggered by onAnimationComplete in BonusTriggerOverlay
       } else {
         stopAutoSpin();
       }
@@ -372,10 +378,8 @@ function App() {
             spinStopAudioRef.current.play().catch(console.error);
         }
         
-        if (freeSpinsRemaining + wonFreeSpins > 0) {
-            // Wait longer if we just triggered the bonus.
-            const delay = wonFreeSpins > 0 ? 4000 : 1500;
-            setTimeout(() => handleSpinStartRef.current(), delay);
+        if (freeSpinsRemaining + wonFreeSpins > 0 && wonFreeSpins === 0) {
+            setTimeout(() => handleSpinStartRef.current(), 1500);
         }
     }
   }, [balance, currentBet, freeSpinsRemaining, stopAutoSpin]);
@@ -386,12 +390,12 @@ function App() {
     <div
       className="app-layout"
       style={{
-        width: '80vw',
+        width: '100vw',
         height: '100vh',
         margin: 'auto',
         boxSizing: 'border-box',
         overflow: 'hidden',
-        backgroundImage: `url(${ASSETS.BACKG})`,
+        backgroundImage: `url(${ASSETS.background})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
@@ -401,9 +405,11 @@ function App() {
         alignItems: 'center',
       }}
     >
-      {/* ── Slot Machine Board ─────────────────────────────────────────── */}
-      <div className="flex items-stretch justify-center w-full max-w-[1400px]">
-        <div className="w-[80%] lg:w-[55%] max-w-[1000px] relative">
+      {/* ── Game Area (Board + Desktop Controls) ─────────────────────── */}
+      <div className="flex flex-col lg:flex-row items-center lg:items-center justify-center w-full px-2 sm:px-4 pb-24 lg:pb-0 max-w-[1400px] gap-4 xl:gap-12">
+        
+        {/* Slot Machine Board */}
+        <div className="w-[90%] sm:w-[80%] md:w-[55%] lg:w-[50%] xl:w-[50%] max-w-[1000px] relative transition-all duration-300 flex-shrink-0">
           <GoldenFrame width="100%" maxWidth="100%">
             <SlotMachine
               ref={slotMachineRef}
@@ -421,9 +427,8 @@ function App() {
           
           <Mascot isWinning={!!winResult && winResult.totalWin > 0} />
         </div>
-      </div>
 
-      {/* ── Control Bar ───────────────────────────────────────────────── */}
+        {/* Control Bar */}
         <ControlPanel
           balance={balance}
           currentBet={currentBet}
@@ -448,6 +453,8 @@ function App() {
           }
           onOpenPaytable={() => setPayTableOpen(true)}
         />
+
+      </div>
 
       {/* ── Modals ────────────────────────────────────────────────────── */}
       <BuyBonusModal
@@ -487,6 +494,20 @@ function App() {
         open={payTableOpen}
         onClose={() => setPayTableOpen(false)}
       />
+
+      {showBonusOverlay && (
+        <BonusTriggerOverlay
+          freeSpinsWon={lastFreeSpinsWon}
+          onAnimationComplete={() => {
+            setShowBonusOverlay(false);
+            showBonusOverlayRef.current = false;
+            if (autoSpinRef.current || freeSpinsRemaining > 0) {
+               // Start spinning the free spins!
+               setTimeout(() => handleSpinStartRef.current(), 500); 
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -128,7 +128,7 @@ const calculateOnce = (
         count: scatterCount,
         winAmount: scatterWin,
         ways: 1,
-        path: scatterPositions
+        // No path for scatters so PaylineOverlay doesn't draw a line
       });
     }
   }
