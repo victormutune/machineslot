@@ -1,4 +1,5 @@
 import { formatBalance, formatBet } from '../stake/stakeEngineHelpers';
+import HamburgerMenu from './ui/HamburgerMenu';
 
 interface ControlPanelProps {
   balance: number;
@@ -11,6 +12,10 @@ interface ControlPanelProps {
   freeSpinsTotalWin?: number;
   isMuted: boolean;
   onToggleMute: () => void;
+  volume: number;
+  onVolumeChange: (vol: number) => void;
+  boostActive: boolean;
+  onToggleBoost: () => void;
   onSpin: () => void;
   onIncreaseBet: () => void;
   onDecreaseBet: () => void;
@@ -30,6 +35,10 @@ export default function SlotControlPanel({
   freeSpinsTotalWin = 0,
   isMuted,
   onToggleMute,
+  volume,
+  onVolumeChange,
+  boostActive,
+  onToggleBoost,
   onSpin,
   onIncreaseBet,
   onDecreaseBet,
@@ -103,36 +112,21 @@ export default function SlotControlPanel({
 
           {/* Bottom Row */}
           <div className="flex items-center justify-between w-full px-6 mb-2">
-            {/* Info / Paytable */}
+            {/* Menu */}
             <div className="flex items-center gap-2">
-              <button
-                onClick={onOpenPaytable}
-                className="w-14 h-8 rounded-full border border-white/20 bg-black/40 flex items-center justify-center text-white italic font-serif hover:bg-white/10"
-              >
-                i
-              </button>
+              <HamburgerMenu
+                onOpenPaytable={onOpenPaytable}
+                isMuted={isMuted}
+                onToggleMute={onToggleMute}
+                volume={volume}
+                onVolumeChange={onVolumeChange}
+                boostActive={boostActive}
+                onToggleBoost={onToggleBoost}
+              />
             </div>
 
-            {/* Free Spins / Buy Bonus & Mute */}
+            {/* Free Spins / Buy Bonus */}
             <div className="flex items-end gap-2">
-              <button
-                onClick={onToggleMute}
-                className="w-10 h-10 rounded-full border border-white/20 bg-black/40 flex items-center justify-center text-white hover:bg-white/10 active:scale-95 transition"
-              >
-                {isMuted ? (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
-                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                    <line x1="23" y1="9" x2="17" y2="15"></line>
-                    <line x1="17" y1="9" x2="23" y2="15"></line>
-                  </svg>
-                ) : (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
-                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
-                  </svg>
-                )}
-              </button>
 
               <button
                 onClick={freeSpinsRemaining > 0 ? undefined : onBuyBonus}
@@ -184,25 +178,6 @@ export default function SlotControlPanel({
 
           {/* Sound Control + Buy Bonus Button Stack */}
           <div className="absolute left-0 z-20 transform -translate-x-4 flex flex-col items-center gap-2 -translate-y-6">
-            <button
-              onClick={onToggleMute}
-              className="w-10 h-10 rounded-full border border-white/20 bg-black/60 flex items-center justify-center text-white hover:bg-white/10 active:scale-95 transition-all shadow-lg backdrop-blur-sm"
-              title={isMuted ? "Unmute Sound" : "Mute Sound"}
-            >
-              {isMuted ? (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
-                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                  <line x1="23" y1="9" x2="17" y2="15"></line>
-                  <line x1="17" y1="9" x2="23" y2="15"></line>
-                </svg>
-              ) : (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
-                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
-                </svg>
-              )}
-            </button>
 
             <button
               onClick={onBuyBonus}
@@ -223,13 +198,15 @@ export default function SlotControlPanel({
 
               {/* Left: Menu & Balance */}
               <div className="flex items-center gap-6 pl-8">
-                <button onClick={onOpenPaytable} className="text-white hover:text-gray-300 transition">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="4" y1="12" x2="20" y2="12" />
-                    <line x1="4" y1="6" x2="20" y2="6" />
-                    <line x1="4" y1="18" x2="20" y2="18" />
-                  </svg>
-                </button>
+                <HamburgerMenu
+                  onOpenPaytable={onOpenPaytable}
+                  isMuted={isMuted}
+                  onToggleMute={onToggleMute}
+                  volume={volume}
+                  onVolumeChange={onVolumeChange}
+                  boostActive={boostActive}
+                  onToggleBoost={onToggleBoost}
+                />
 
                 <div className="flex flex-col">
                   <span className="text-[10px] text-gray-400 font-bold tracking-wider uppercase">Balance</span>

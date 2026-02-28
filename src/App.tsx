@@ -44,12 +44,13 @@ function App() {
   const [autoSpinModalOpen, setAutoSpinModalOpen] = useState(false);
   const [_statusMessage, setStatusMessage] = useState<string>('GRADIATOR');
   const [payTableOpen, setPayTableOpen] = useState(false);
-  const [boostActive] = useState(false);
+  const [boostActive, setBoostActive] = useState(false);
   const [showBonusOverlay, setShowBonusOverlay] = useState(false);
   const showBonusOverlayRef = useRef(false);
   
   // Audio State
   const [isMuted, setIsMuted] = useState(false);
+  const [volume, setVolume] = useState(1); // 0.0 to 1.0
 
   // Track which visual strips to use (for SlotMachine animation)
   const [currentStrips, setCurrentStrips] = useState<number[][]>(REEL_STRIPS);
@@ -95,12 +96,21 @@ function App() {
     };
   }, []);
 
-  // Sync mute state to audio elements
+  // Sync mute state and volume to audio elements
   useEffect(() => {
-    if (bgMusicRef.current) bgMusicRef.current.muted = isMuted;
-    if (spinStartAudioRef.current) spinStartAudioRef.current.muted = isMuted;
-    if (spinStopAudioRef.current) spinStopAudioRef.current.muted = isMuted;
-  }, [isMuted]);
+    if (bgMusicRef.current) {
+      bgMusicRef.current.muted = isMuted;
+      bgMusicRef.current.volume = 0.3 * volume;
+    }
+    if (spinStartAudioRef.current) {
+      spinStartAudioRef.current.muted = isMuted;
+      spinStartAudioRef.current.volume = 0.7 * volume;
+    }
+    if (spinStopAudioRef.current) {
+      spinStopAudioRef.current.muted = isMuted;
+      spinStopAudioRef.current.volume = 0.7 * volume;
+    }
+  }, [isMuted, volume]);
 
   const initAudio = useCallback(() => {
     if (!audioInitializedRef.current && bgMusicRef.current) {
@@ -440,6 +450,8 @@ function App() {
           freeSpinsTotalWin={freeSpinsTotalWin}
           isMuted={isMuted}
           onToggleMute={() => setIsMuted(prev => !prev)}
+          volume={volume}
+          onVolumeChange={setVolume}
           onSpin={() => handleSpinStart('none')}
           onIncreaseBet={increaseBet}
           onDecreaseBet={decreaseBet}
@@ -452,6 +464,8 @@ function App() {
               : setAutoSpinModalOpen(true)
           }
           onOpenPaytable={() => setPayTableOpen(true)}
+          boostActive={boostActive}
+          onToggleBoost={() => setBoostActive(prev => !prev)}
         />
 
       </div>
