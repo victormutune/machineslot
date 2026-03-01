@@ -9,6 +9,7 @@ import BuyBonusModal, { type BuyBonusChoice } from './components/modals/BuyBonus
 import AutoSpinModal from './components/modals/AutoSpinModal';
 import PayTableModal from './components/modals/PayTableModal';
 import BonusTriggerOverlay from './components/ui/BonusTriggerOverlay';
+import ClockDisplay from './components/ui/ClockDisplay';
 import { calculateWin, type WinResult } from './slot/winLogic';
 import {
   emitRoundActive,
@@ -405,7 +406,7 @@ function App() {
         margin: 'auto',
         boxSizing: 'border-box',
         overflow: 'hidden',
-        backgroundImage: `url(${ASSETS.background})`,
+        backgroundImage: `url(${ASSETS.BAKI})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
@@ -415,11 +416,15 @@ function App() {
         alignItems: 'center',
       }}
     >
+      {/* Dark overlay to dim the background image only */}
+      <div className="absolute inset-0 bg-black/10 pointer-events-none" style={{ zIndex: 0 }} />
+      <div className="relative w-full flex flex-col items-center" style={{ zIndex: 1 }}>
+      <ClockDisplay />
       {/* ── Game Area (Board + Desktop Controls) ─────────────────────── */}
       <div className="flex flex-col lg:flex-row items-center lg:items-center justify-center w-full px-2 sm:px-4 pb-24 lg:pb-0 max-w-[1400px] gap-4 xl:gap-12">
         
         {/* Slot Machine Board */}
-        <div className="w-[90%] sm:w-[80%] md:w-[55%] lg:w-[50%] xl:w-[50%] max-w-[1000px] relative transition-all duration-300 flex-shrink-0">
+        <div className="w-[90%] sm:w-[80%] md:w-[45%] lg:w-[45%] xl:w-[45%] max-w-[1000px] relative transition-all duration-300 flex-shrink-0">
           <GoldenFrame width="100%" maxWidth="100%">
             <SlotMachine
               ref={slotMachineRef}
@@ -468,6 +473,7 @@ function App() {
           onToggleBoost={() => setBoostActive(prev => !prev)}
         />
 
+      </div>
       </div>
 
       {/* ── Modals ────────────────────────────────────────────────────── */}

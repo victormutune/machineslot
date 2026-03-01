@@ -16,6 +16,7 @@ import background from "./theme/BACKGROUND.png";
 import frame from "./theme/football_slot_frame.png";
 import Back from "./theme/Back.png";
 import BACKG from "./theme/BACKG.png";
+import BAKI from "./theme/BAKI.png"
 // Audio
 import bgMusic from "./mascot/lab_slots_bgm.mp3";
 import spinStartSound from "./mascot/spin_start.mp3";
@@ -159,6 +160,7 @@ export const BONUS_REEL_STRIPS = [BONUS_REEL_1, BONUS_REEL_2, BONUS_REEL_3, BONU
 
 export const ASSETS = {
   background,
+  BAKI,
   Back,
   BACKG,
   frame,

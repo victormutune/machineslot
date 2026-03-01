@@ -53,7 +53,7 @@ export default function SlotControlPanel({
   return (
     <>
       {/* ================= MOBILE LAYOUT ================= */}
-      <div className="lg:hidden fixed inset-x-0 bottom-0 z-50 flex flex-col justify-end pb-2 pointer-events-none">
+      <div className="lg:hidden fixed inset-x-0 bottom-0 z-50 flex flex-col justify-end pb-2 pointer-events-none overflow-visible">
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none" />
 
         <div className="relative z-10 w-full flex flex-col items-center pointer-events-auto">
@@ -113,7 +113,7 @@ export default function SlotControlPanel({
           {/* Bottom Row */}
           <div className="flex items-center justify-between w-full px-6 mb-2">
             {/* Menu */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 overflow-visible pointer-events-auto">
               <HamburgerMenu
                 onOpenPaytable={onOpenPaytable}
                 isMuted={isMuted}
@@ -177,12 +177,12 @@ export default function SlotControlPanel({
 
 
           {/* Sound Control + Buy Bonus Button Stack */}
-          <div className="absolute left-0 z-20 transform -translate-x-4 flex flex-col items-center gap-2 -translate-y-6">
+          <div className="absolute left-0 z-20 flex flex-col items-center justify-center h-16 w-16 -ml-2">
 
             <button
               onClick={onBuyBonus}
               disabled={spinning}
-              className="w-18 h-18 rounded-full bg-[#fbbf24] border-2 border-[#f59e0b] shadow-lg flex flex-col items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer disabled:opacity-50"
+              className="w-16 h-16 rounded-full bg-[#fbbf24] border-2 border-[#f59e0b] shadow-lg flex flex-col items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer disabled:opacity-50"
             >
               <span className="text-black font-extrabold text-[10px] leading-tight text-center">
                 BUY<br />BONUS
@@ -191,7 +191,7 @@ export default function SlotControlPanel({
           </div>
 
           {/* Main Control Bar */}
-          <div className="relative bg-[#1a1b1e]/95 backdrop-blur-sm w-full max-w-2xl flex flex-col rounded-sm shadow-2xl border-t border-white/10 ml-8 overflow-hidden">
+          <div className="relative bg-[#1a1b1e]/95 backdrop-blur-sm w-full max-w-2xl flex flex-col rounded-sm shadow-2xl border-t border-white/10 ml-8">
 
             {/* Controls Row */}
             <div className="h-16 flex items-center px-4">
