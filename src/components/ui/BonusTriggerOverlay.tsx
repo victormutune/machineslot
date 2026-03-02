@@ -7,104 +7,211 @@ interface BonusTriggerOverlayProps {
 }
 
 const BonusTriggerOverlay: React.FC<BonusTriggerOverlayProps> = ({ freeSpinsWon, onAnimationComplete }) => {
-  const [phase, setPhase] = useState<'hidden' | 'explode' | 'show' | 'fade-out'>('hidden');
+  const [phase, setPhase] = useState<'hidden' | 'enter' | 'show'>('hidden');
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const hasCompleted = useRef(false);
 
   useEffect(() => {
-    // Initialize audio instance once
     if (!audioRef.current) {
-        audioRef.current = new Audio(ASSETS.audio.bonusTrigger);
-        audioRef.current.volume = 0.8;
+      audioRef.current = new Audio(ASSETS.audio.bonusTrigger);
+      audioRef.current.volume = 0.8;
     }
-    
+
     if (freeSpinsWon > 0) {
+      hasCompleted.current = false;
+
       // Play Sound
       if (audioRef.current) {
-         audioRef.current.currentTime = 0;
-         audioRef.current.play().catch(e => console.error("Audio play failed:", e));
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(e => console.error('Audio play failed:', e));
       }
 
-      // 1. Instantly start exploding/sliding in
-      setPhase('explode');
-
-      // 2. Settle into showing the text
-      const showTimer = setTimeout(() => {
-        setPhase('show');
-      }, 800);
-
-      // 3. Start fading out
-      const fadeTimer = setTimeout(() => {
-        setPhase('fade-out');
-      }, 3500);
-
-      // 4. Complete animation, tell parent to resume
-      const completeTimer = setTimeout(() => {
-        setPhase('hidden');
-        onAnimationComplete();
-      }, 4000);
+      // Slide in
+      setPhase('enter');
+      const showTimer = setTimeout(() => setPhase('show'), 80);
 
       return () => {
         clearTimeout(showTimer);
-        clearTimeout(fadeTimer);
-        clearTimeout(completeTimer);
       };
     }
-  }, [freeSpinsWon, onAnimationComplete]);
+  }, [freeSpinsWon]);
+
+  const handleContinue = () => {
+    if (hasCompleted.current) return;
+    hasCompleted.current = true;
+    setPhase('hidden');
+    onAnimationComplete();
+  };
 
   if (phase === 'hidden' || freeSpinsWon === 0) return null;
 
   return (
-    <div className={`fixed inset-0 z-[100] flex items-center justify-center pointer-events-none transition-opacity duration-500 overflow-hidden ${phase === 'fade-out' ? 'opacity-0' : 'opacity-100'}`}>
-      
-      {/* Dark Backdrop */}
-      <div className={`absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity duration-500 ${phase === 'fade-out' ? 'opacity-0' : 'opacity-100'}`} />
+    <div
+      className="fixed inset-0 z-[200] flex items-center justify-center"
+      style={{
+        backgroundImage: `url(${ASSETS.BAKI})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
+      {/* Slight dark overlay for depth */}
+      <div className="absolute inset-0 bg-black/30 pointer-events-none" />
 
-      {/* Explosive Light Rays Background */}
-      <div className={`absolute inset-0 flex items-center justify-center transition-transform duration-1000 ${phase === 'explode' ? 'scale-[0.1] opacity-0' : 'scale-100 opacity-100'}`}>
-        <div className="w-[150vw] h-[150vw] max-w-[2000px] max-h-[2000px] bg-[radial-gradient(circle,rgba(255,215,0,0.5)_0%,rgba(0,0,0,0)_60%)] animate-spin-slow opacity-60" style={{ animationDuration: '10s' }} />
+      {/* Particle rays */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
+        <div
+          className="w-[200vw] h-[200vw] opacity-20"
+          style={{
+            background: 'conic-gradient(from 0deg, transparent 0deg, rgba(255,215,0,0.6) 10deg, transparent 20deg, transparent 40deg, rgba(255,215,0,0.4) 50deg, transparent 60deg, transparent 80deg, rgba(255,215,0,0.5) 90deg, transparent 100deg, transparent 120deg, rgba(255,215,0,0.5) 130deg, transparent 140deg, transparent 160deg, rgba(255,215,0,0.3) 170deg, transparent 180deg, transparent 200deg, rgba(255,215,0,0.5) 210deg, transparent 220deg, transparent 240deg, rgba(255,215,0,0.4) 250deg, transparent 260deg, transparent 280deg, rgba(255,215,0,0.6) 290deg, transparent 300deg, transparent 320deg, rgba(255,215,0,0.4) 330deg, transparent 340deg, transparent 360deg)',
+            animation: 'spin 12s linear infinite',
+          }}
+        />
       </div>
 
-      {/* Main Content Container */}
-      <div className={`relative flex flex-col items-center justify-center text-center transform transition-all duration-[800ms] cubic-bezier(0.175, 0.885, 0.32, 1.275) ${phase === 'explode' ? 'scale-0 translate-y-20 opacity-0' : 'scale-100 translate-y-0 opacity-100'}`}>
-        
-        {/* Decorative Top Elements */}
-        <div className="mb-4 flex gap-4 animate-bounce">
-          <span className="text-4xl">🎉</span>
-          <span className="text-5xl text-yellow-400">⚡</span>
-          <span className="text-4xl">🎉</span>
-        </div>
+      {/* ── Main Frame Container ─────────────────────────────────────────── */}
+      <div
+        className="relative flex items-center justify-center"
+        style={{
+          width: 'min(80vw, 520px)',
+          height: 'min(80vw, 520px)',
+          transform: phase === 'enter' ? 'scale(0.5) translateY(60px)' : 'scale(1) translateY(0)',
+          opacity: phase === 'enter' ? 0 : 1,
+          transition: 'transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease',
+        }}
+      >
+        {/* ── Frame Image (same as GoldenFrame) ── */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: `url(${ASSETS.frame})`,
+            backgroundSize: '100% 100%',
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center',
+            zIndex: 50,
+          }}
+        />
 
-        {/* Huge Text */}
-        <h1 className="text-6xl md:text-8xl lg:text-9xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 via-yellow-400 to-yellow-600 drop-shadow-[0_10px_10px_rgba(255,165,0,0.5)] mb-2 uppercase" style={{ WebkitTextStroke: '2px #b45309' }}>
-          BONUS
-        </h1>
-        <h2 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-widest text-white drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)] mb-8 uppercase">
-          Triggered!
-        </h2>
+        {/* ── Dark panel behind content (inside the frame) ── */}
+        <div
+          className="absolute"
+          style={{
+            width: '75%',
+            height: '73%',
+            background: 'linear-gradient(170deg, #0a0a2e 0%, #0d1a3a 40%, #0a0a1e 100%)',
+            borderRadius: '6px',
+            zIndex: 10,
+            boxShadow: 'inset 0 0 40px rgba(0,0,0,0.8)',
+          }}
+        />
 
-        {/* Free Spins Amount */}
-        <div className="relative mt-8 px-12 py-6 bg-gradient-to-b from-black/60 to-black/90 border-2 border-yellow-500/50 rounded-3xl shadow-[0_0_50px_rgba(255,215,0,0.4)] overflow-hidden">
-            {/* Inner glow */}
-            <div className="absolute inset-0 bg-yellow-400/10 blur-xl"></div>
-            
-            <div className="relative flex flex-col items-center justify-center">
-                <span className="text-2xl md:text-3xl font-bold text-gray-300 uppercase tracking-widest mb-2">You Have Won</span>
-                <div className="flex items-center gap-4">
-                     <span className="text-6xl md:text-8xl font-black text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.8)]">{freeSpinsWon}</span>
-                     <div className="flex flex-col text-left leading-none">
-                         <span className="text-3xl md:text-5xl font-extrabold text-yellow-400 uppercase">Free</span>
-                         <span className="text-3xl md:text-5xl font-extrabold text-yellow-400 uppercase">Spins</span>
-                     </div>
-                </div>
-            </div>
-        </div>
-        
-        {/* Decorative Bottom */}
-        <div className="mt-12 text-yellow-400/80 font-bold uppercase tracking-[0.5em] text-sm animate-pulse">
-            Get Ready
-        </div>
+        {/* ── Content inside the frame ── */}
+        <div
+          className="relative flex flex-col items-center justify-center text-center gap-2 px-4"
+          style={{ zIndex: 30, width: '85%', height: '73%' }}
+        >
+          {/* CONGRATULATIONS */}
+          <h1
+            className="font-black uppercase tracking-wider leading-none"
+            style={{
+              fontSize: 'clamp(14px, 4.5vw, 22px)',
+              color: '#ff6600',
+              textShadow: '0 0 20px rgba(255,100,0,0.8), 0 2px 4px rgba(0,0,0,0.9)',
+              letterSpacing: '0.08em',
+              fontFamily: 'Impact, "Arial Black", sans-serif',
+            }}
+          >
+            CONGRATULATIONS
+          </h1>
 
+          {/* YOU WON X FREE SPINS */}
+          <div className="flex flex-col items-center leading-tight">
+            <span
+              className="font-black uppercase"
+              style={{
+                fontSize: 'clamp(18px, 5vw, 28px)',
+                color: '#FFE000',
+                textShadow: '0 0 30px rgba(255,220,0,0.9), 0 3px 6px rgba(0,0,0,0.9)',
+                fontFamily: 'Impact, "Arial Black", sans-serif',
+                lineHeight: 1.1,
+              }}
+            >
+              YOU WON {freeSpinsWon}
+            </span>
+            <span
+              className="font-black uppercase"
+              style={{
+                fontSize: 'clamp(18px, 5vw, 28px)',
+                color: '#FFE000',
+                textShadow: '0 0 30px rgba(255,220,0,0.9), 0 3px 6px rgba(0,0,0,0.9)',
+                fontFamily: 'Impact, "Arial Black", sans-serif',
+                lineHeight: 1.1,
+              }}
+            >
+              FREE SPINS!
+            </span>
+          </div>
+
+          {/* Divider */}
+          <div
+            className="w-4/5 my-1"
+            style={{
+              height: '1px',
+              background: 'linear-gradient(90deg, transparent, rgba(255,200,0,0.6), transparent)',
+            }}
+          />
+
+          {/* Description text */}
+          <p
+            className="text-center font-bold uppercase"
+            style={{
+              fontSize: 'clamp(8px, 2vw, 11px)',
+              color: '#e0e8ff',
+              lineHeight: 1.5,
+              letterSpacing: '0.04em',
+              maxWidth: '85%',
+              textShadow: '0 1px 3px rgba(0,0,0,0.9)',
+            }}
+          >
+            YOU START WITH {freeSpinsWon} FREE SPINS ON
+            ENHANCED REELS WITH MORE HIGH-VALUE
+            SYMBOLS. COLLECT BONUS SCATTERS TO WIN
+            ADDITIONAL FREE SPINS!
+          </p>
+        </div>
       </div>
+
+      {/* ── CLICK TO CONTINUE button (below the frame) ── */}
+      <button
+        onClick={handleContinue}
+        className="absolute font-black uppercase tracking-widest cursor-pointer"
+        style={{
+          bottom: 'clamp(30px, 8vh, 80px)',
+          fontSize: 'clamp(16px, 3vw, 24px)',
+          color: '#FFE000',
+          background: 'none',
+          border: 'none',
+          textShadow: '0 0 20px rgba(255,220,0,0.8), 0 2px 6px rgba(0,0,0,0.9)',
+          fontFamily: 'Impact, "Arial Black", sans-serif',
+          letterSpacing: '0.12em',
+          animation: 'pulse-glow 1.5s ease-in-out infinite',
+          zIndex: 100,
+        }}
+      >
+        CLICK TO CONTINUE
+      </button>
+
+      {/* Pulse glow animation */}
+      <style>{`
+        @keyframes pulse-glow {
+          0%, 100% { opacity: 1; text-shadow: 0 0 20px rgba(255,220,0,0.8), 0 2px 6px rgba(0,0,0,0.9); }
+          50% { opacity: 0.6; text-shadow: 0 0 40px rgba(255,220,0,1), 0 2px 6px rgba(0,0,0,0.9); }
+        }
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 };

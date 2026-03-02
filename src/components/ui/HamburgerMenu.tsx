@@ -6,8 +6,11 @@ interface HamburgerMenuProps {
   onToggleMute: () => void;
   volume: number;
   onVolumeChange: (vol: number) => void;
-  boostActive: boolean;
-  onToggleBoost: () => void;
+  instantSpin: boolean;
+  onToggleInstantSpin: () => void;
+  turboSpin: boolean;
+  onToggleTurboSpin: () => void;
+  // boostActive / onToggleBoost removed — Bonus Boost is controlled by the BUY BONUS button
 }
 
 export default function HamburgerMenu({
@@ -16,8 +19,10 @@ export default function HamburgerMenu({
   onToggleMute,
   volume,
   onVolumeChange,
-  boostActive,
-  onToggleBoost,
+  instantSpin,
+  onToggleInstantSpin,
+  turboSpin,
+  onToggleTurboSpin,
 }: HamburgerMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -50,11 +55,11 @@ export default function HamburgerMenu({
         </svg>
       </button>
 
-      {/* Menu Overlay */}
+      {/* Menu Card */}
       {isOpen && (
         <div className="absolute bottom-full left-0 mb-4 w-64 bg-[#1a1b1e] rounded-lg shadow-2xl border border-white/20 p-4 flex flex-col gap-6 z-50">
-          
-          {/* Paytable (Info) */}
+
+          {/* Paytable */}
           <button
             onClick={() => {
               setIsOpen(false);
@@ -77,10 +82,27 @@ export default function HamburgerMenu({
               <span className="font-bold tracking-wider">Turbo Boost</span>
             </div>
             <button
-              onClick={onToggleBoost}
-              className={`w-12 h-6 rounded-full p-1 transition-colors ${boostActive ? 'bg-yellow-400' : 'bg-gray-600'}`}
+              onClick={onToggleTurboSpin}
+              className={`w-12 h-6 rounded-full p-1 transition-colors ${turboSpin ? 'bg-orange-400' : 'bg-gray-600'}`}
             >
-              <div className={`w-4 h-4 rounded-full bg-white transform transition-transform ${boostActive ? 'translate-x-6' : 'translate-x-0'}`} />
+              <div className={`w-4 h-4 rounded-full bg-white transform transition-transform ${turboSpin ? 'translate-x-6' : 'translate-x-0'}`} />
+            </button>
+          </div>
+
+          {/* Instant Spin */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 text-white">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                <line x1="19" y1="3" x2="19" y2="21"></line>
+              </svg>
+              <span className="font-bold tracking-wider">Instant Spin</span>
+            </div>
+            <button
+              onClick={onToggleInstantSpin}
+              className={`w-12 h-6 rounded-full p-1 transition-colors ${instantSpin ? 'bg-yellow-400' : 'bg-gray-600'}`}
+            >
+              <div className={`w-4 h-4 rounded-full bg-white transform transition-transform ${instantSpin ? 'translate-x-6' : 'translate-x-0'}`} />
             </button>
           </div>
 
@@ -117,7 +139,7 @@ export default function HamburgerMenu({
               className="w-full accent-yellow-400"
             />
           </div>
-          
+
         </div>
       )}
     </div>

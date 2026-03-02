@@ -55,29 +55,36 @@ const Reel = forwardRef<ReelHandle, ReelProps>(({
       const uniqueCount = baseStrip.length;
 
       const loopStart = -(uniqueCount * 2 * symbolH); 
-      const loopEnd = -(uniqueCount * symbolH); 
+      const loopEnd   = -(uniqueCount * symbolH); 
+      const loopDuration = 0.15 * boostMultiplier;
+
+      // Extra loop cycles to keep THIS reel spinning while earlier reels are landing.
+      // This is what creates the strict left-to-right stopping order.
+      const extraLoops = stopDelay > 0 ? Math.ceil(stopDelay / loopDuration) : 0;
 
       gsap.set(reel, { y: loopStart });
 
+      // ── Loop phase (all reels same speed, later reels do more loops) ──
       tl.fromTo(reel, 
         { y: loopStart },
         {
           y: loopEnd, 
-          duration: 0.15 * boostMultiplier, 
+          duration: loopDuration, 
           ease: "none",
-          repeat: spins, 
+          repeat: spins + extraLoops,
         }
       );
 
+      // ── Landing phase (fixed duration — does NOT depend on stopDelay) ──
       const targetIndex = uniqueCount + stopIndex; 
       const finalY = -(targetIndex * symbolH);
-      const landingDuration = (1.5 + stopDelay) * boostMultiplier;
+      const landingDuration = 1.2 * boostMultiplier;
 
       tl.fromTo(reel,
         { y: loopStart },
         {
           y: finalY,
-          duration: landingDuration, 
+          duration: landingDuration,
           ease: "power2.out",
           onComplete: () => {
              gsap.set(reel, { y: finalY });

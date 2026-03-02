@@ -52,7 +52,7 @@ const GoldenFrame: React.FC<GoldenFrameProps> = ({
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 20, // Middle layer
-        padding: '5px'
+        padding: '10px'
       }}>
         {children}
       </div>

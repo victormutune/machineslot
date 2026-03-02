@@ -4,6 +4,7 @@ import HamburgerMenu from './ui/HamburgerMenu';
 interface ControlPanelProps {
   balance: number;
   currentBet: number;
+  currency?: string;
   betLevels: number[];
   currentBetIndex: number;
   spinning: boolean;
@@ -16,6 +17,10 @@ interface ControlPanelProps {
   onVolumeChange: (vol: number) => void;
   boostActive: boolean;
   onToggleBoost: () => void;
+  instantSpin: boolean;
+  onToggleInstantSpin: () => void;
+  turboSpin: boolean;
+  onToggleTurboSpin: () => void;
   onSpin: () => void;
   onIncreaseBet: () => void;
   onDecreaseBet: () => void;
@@ -27,6 +32,7 @@ interface ControlPanelProps {
 export default function SlotControlPanel({
   balance,
   currentBet,
+  currency,
   betLevels,
   currentBetIndex,
   spinning,
@@ -39,6 +45,10 @@ export default function SlotControlPanel({
   onVolumeChange,
   boostActive,
   onToggleBoost,
+  instantSpin,
+  onToggleInstantSpin,
+  turboSpin,
+  onToggleTurboSpin,
   onSpin,
   onIncreaseBet,
   onDecreaseBet,
@@ -48,7 +58,9 @@ export default function SlotControlPanel({
 }: ControlPanelProps) {
   const atMin = currentBetIndex === 0;
   const atMax = currentBetIndex === betLevels.length - 1;
-  const displayBet = currentBet;
+  // When boost is active, the actual cost per spin is 2× the base bet
+  const displayBet = boostActive ? currentBet * 2 : currentBet;
+  const cur = currency ?? 'USD';
 
   return (
     <>
@@ -120,31 +132,45 @@ export default function SlotControlPanel({
                 onToggleMute={onToggleMute}
                 volume={volume}
                 onVolumeChange={onVolumeChange}
-                boostActive={boostActive}
-                onToggleBoost={onToggleBoost}
+                instantSpin={instantSpin}
+                onToggleInstantSpin={onToggleInstantSpin}
+                turboSpin={turboSpin}
+                onToggleTurboSpin={onToggleTurboSpin}
               />
             </div>
 
-            {/* Free Spins / Buy Bonus */}
+            {/* Free Spins / Buy Bonus / Deactivate Boost */}
             <div className="flex items-end gap-2">
-
-              <button
-                onClick={freeSpinsRemaining > 0 ? undefined : onBuyBonus}
-                disabled={spinning || freeSpinsRemaining > 0}
-                className={`h-10 rounded-full border border-white/20 bg-black/40 flex flex-col items-center justify-center hover:bg-white/10 active:scale-95 transition ${freeSpinsRemaining > 0 ? 'w-32 border-yellow-400/50' : 'w-16'}`}
-              >
-                {freeSpinsRemaining > 0 ? (
+              {freeSpinsRemaining > 0 ? (
+                <button
+                  disabled
+                  className="h-10 w-32 rounded-full border border-yellow-400/50 bg-black/40 flex flex-col items-center justify-center"
+                >
                   <div className="flex flex-col items-center">
                     <span className="text-[9px] text-yellow-400 font-bold leading-none">FREE SPINS</span>
                     <span className="text-lg text-white font-black leading-none">{freeSpinsRemaining}</span>
                   </div>
-                ) : (
+                </button>
+              ) : boostActive ? (
+                <button
+                  onClick={onToggleBoost}
+                  disabled={spinning}
+                  className="h-10 px-3 rounded-full border border-red-400/60 bg-red-600/30 flex items-center justify-center hover:bg-red-600/50 active:scale-95 transition disabled:opacity-50"
+                >
+                  <span style={{ fontSize: '8px', letterSpacing: '0.05em', transform: 'scaleX(0.85)', display: 'inline-block', fontWeight: 900, color: '#fca5a5', whiteSpace: 'nowrap' }}>DEACTIVATE</span>
+                </button>
+              ) : (
+                <button
+                  onClick={onBuyBonus}
+                  disabled={spinning}
+                  className="h-10 w-16 rounded-full border border-white/20 bg-black/40 flex items-center justify-center hover:bg-white/10 active:scale-95 transition disabled:opacity-50"
+                >
                   <div className="flex -space-x-1">
                     <div className="w-3 h-3 rounded-full border border-white bg-yellow-400" />
                     <div className="w-3 h-3 rounded-full border border-white bg-yellow-400" />
                   </div>
-                )}
-              </button>
+                </button>
+              )}
             </div>
 
             {/* Auto Spin */}
@@ -162,9 +188,9 @@ export default function SlotControlPanel({
 
           {/* Footer: Credit / Bet */}
           <div className="flex gap-4 text-xs font-bold text-[#f2d27a] tracking-wider mb-2">
-            <span>CREDIT {formatBalance(balance)}</span>
+            <span>CREDIT {formatBalance(balance, cur)}</span>
             <span className="flex items-center gap-1">
-              BET {formatBet(displayBet)}
+              BET {formatBet(displayBet, cur)}
             </span>
           </div>
         </div>
@@ -176,18 +202,27 @@ export default function SlotControlPanel({
         <div className="relative flex items-center justify-center w-full max-w-3xl">
 
 
-          {/* Sound Control + Buy Bonus Button Stack */}
+          {/* Buy Bonus / Deactivate Boost Button */}
           <div className="absolute left-0 z-20 flex flex-col items-center justify-center h-16 w-16 -ml-2">
-
-            <button
-              onClick={onBuyBonus}
-              disabled={spinning}
-              className="w-16 h-16 rounded-full bg-[#fbbf24] border-2 border-[#f59e0b] shadow-lg flex flex-col items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer disabled:opacity-50"
-            >
-              <span className="text-black font-extrabold text-[10px] leading-tight text-center">
-                BUY<br />BONUS
-              </span>
-            </button>
+            {boostActive ? (
+              <button
+                onClick={onToggleBoost}
+                disabled={spinning}
+                className="w-16 h-16 rounded-full bg-red-600 border-2 border-red-400 shadow-lg shadow-red-900/50 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer disabled:opacity-50 animate-pulse"
+              >
+                <span style={{ fontSize: '9px', letterSpacing: '0.04em', transform: 'scaleX(0.78)', display: 'inline-block', fontWeight: 900, color: 'white', whiteSpace: 'nowrap' }}>DEACTIVATE</span>
+              </button>
+            ) : (
+              <button
+                onClick={onBuyBonus}
+                disabled={spinning}
+                className="w-16 h-16 rounded-full bg-[#fbbf24] border-2 border-[#f59e0b] shadow-lg flex flex-col items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer disabled:opacity-50"
+              >
+                <span className="text-black font-extrabold text-[10px] leading-tight text-center">
+                  BUY<br />BONUS
+                </span>
+              </button>
+            )}
           </div>
 
           {/* Main Control Bar */}
@@ -204,13 +239,15 @@ export default function SlotControlPanel({
                   onToggleMute={onToggleMute}
                   volume={volume}
                   onVolumeChange={onVolumeChange}
-                  boostActive={boostActive}
-                  onToggleBoost={onToggleBoost}
+                  instantSpin={instantSpin}
+                  onToggleInstantSpin={onToggleInstantSpin}
+                  turboSpin={turboSpin}
+                  onToggleTurboSpin={onToggleTurboSpin}
                 />
 
                 <div className="flex flex-col">
                   <span className="text-[10px] text-gray-400 font-bold tracking-wider uppercase">Balance</span>
-                  <span className="text-xl font-bold text-white tracking-wide">{formatBalance(balance)}</span>
+                  <span className="text-xl font-bold text-white tracking-wide">{formatBalance(balance, cur)}</span>
                 </div>
               </div>
 
@@ -218,7 +255,7 @@ export default function SlotControlPanel({
                 {freeSpinsRemaining > 0 && freeSpinsTotalWin > 0 && (
                   <div className="flex flex-col items-center justify-center px-6 py-1 bg-yellow-400/10 border border-yellow-400/30 rounded-full animate-pulse shadow-[0_0_15px_rgba(250,204,21,0.2)]">
                     <span className="text-[10px] text-yellow-500 font-extrabold tracking-widest uppercase mb-0.5">Free Spins Win</span>
-                    <span className="text-xl font-black text-yellow-300 drop-shadow-md leading-none">{formatBalance(freeSpinsTotalWin)}</span>
+                    <span className="text-xl font-black text-yellow-300 drop-shadow-md leading-none">{formatBalance(freeSpinsTotalWin, cur)}</span>
                   </div>
                 )}
               </div>
@@ -230,7 +267,7 @@ export default function SlotControlPanel({
                 <div className="flex items-center bg-[#0f1012] rounded-md h-12 border border-white/5 relative mr-12 overflow-hidden">
                   <div className="flex flex-col justify-center px-4 min-w-[110px]">
                     <span className="text-[9px] text-gray-400 font-bold tracking-wider uppercase">Current Bet</span>
-                    <span className="text-lg font-bold text-yellow-400 flex items-center gap-2">
+                    <span className={`text-lg font-bold flex items-center gap-2 ${boostActive ? 'text-red-400' : 'text-yellow-400'}`}>
                       {formatBet(displayBet)}
                     </span>
                   </div>

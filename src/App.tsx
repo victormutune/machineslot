@@ -46,12 +46,17 @@ function App() {
   const [_statusMessage, setStatusMessage] = useState<string>('GRADIATOR');
   const [payTableOpen, setPayTableOpen] = useState(false);
   const [boostActive, setBoostActive] = useState(false);
+  const [instantSpin, setInstantSpin] = useState(false);
+  const [turboSpin, setTurboSpin] = useState(false);
   const [showBonusOverlay, setShowBonusOverlay] = useState(false);
   const showBonusOverlayRef = useRef(false);
   
   // Audio State
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(1); // 0.0 to 1.0
+
+  // Currency from RGS (defaults to USD in demo mode)
+  const [currency, setCurrency] = useState<string>('USD');
 
   // Track which visual strips to use (for SlotMachine animation)
   const [currentStrips, setCurrentStrips] = useState<number[][]>(REEL_STRIPS);
@@ -124,7 +129,9 @@ function App() {
   useEffect(() => {
     const initManager = async () => {
        await stakeManager.initialize();
-       setBalance(stakeManager.currentBetDisplay > 0 ? stakeManager.balance : 10000); // Only override balance if fully initialized logic returns otherwise default 10k wrapper handled in stakeEngine logic. In purely demo it keeps returning config.
+       setBalance(stakeManager.currentBetDisplay > 0 ? stakeManager.balance : 10000);
+       // Capture the live currency from the RGS session
+       setCurrency(stakeManager.currency ?? 'USD');
        
        stakeManager.on('balanceUpdate', (newBal: number) => {
          setBalance(newBal);
@@ -209,7 +216,9 @@ function App() {
     } else if (featureBuy === 'extra_time') {
       effectiveBetMultiplier = 300;
     } else if (featureBuy === 'bonus_boost') {
-      // Bonus boost implies 2x cost only if not buying a feature
+      effectiveBetMultiplier = 2; // One-time activation spin cost
+    } else if (boostActive) {
+      // Every regular spin while boost is ON costs 2x bet
       effectiveBetMultiplier = 2;
     }
 
@@ -349,8 +358,13 @@ function App() {
       if (winAmount > 0) parts.push(`You have won $${winAmount.toLocaleString('en-US')}`);
       if (wonFreeSpins > 0) parts.push(`You received ${wonFreeSpins} free spins`);
       setStatusMessage(parts.join(' • '));
-      setShowBonusOverlay(true);
-      showBonusOverlayRef.current = true;
+
+      // Delay the overlay so the football → bonus scatter image swap
+      // and bounce animation are visible BEFORE the overlay appears.
+      setTimeout(() => {
+        setShowBonusOverlay(true);
+        showBonusOverlayRef.current = true;
+      }, 1800);
     } else {
       setStatusMessage('GRADIATOR');
     }
@@ -429,7 +443,8 @@ function App() {
             <SlotMachine
               ref={slotMachineRef}
               onSpinComplete={handleSpinComplete}
-              boostActive={boostActive}
+              instantSpin={instantSpin}
+              turboSpin={turboSpin}
               winResult={winResult}
               reelStrips={currentStrips}
             />
@@ -447,6 +462,7 @@ function App() {
         <ControlPanel
           balance={balance}
           currentBet={currentBet}
+          currency={currency}
           betLevels={BET_LEVELS}
           currentBetIndex={currentBetIndex}
           spinning={isSpinning}
@@ -471,6 +487,10 @@ function App() {
           onOpenPaytable={() => setPayTableOpen(true)}
           boostActive={boostActive}
           onToggleBoost={() => setBoostActive(prev => !prev)}
+          instantSpin={instantSpin}
+          onToggleInstantSpin={() => setInstantSpin(prev => !prev)}
+          turboSpin={turboSpin}
+          onToggleTurboSpin={() => setTurboSpin(prev => !prev)}
         />
 
       </div>
@@ -482,6 +502,12 @@ function App() {
         onClose={() => setBuyBonusOpen(false)}
         balance={balance}
         currentBet={currentBet}
+        currency={currency}
+        boostActive={boostActive}
+        onDeactivateBoost={() => {
+          setBoostActive(false);
+          setBuyBonusOpen(false);
+        }}
         onIncreaseBet={increaseBet}
         onDecreaseBet={decreaseBet}
         onBuy={(choice: BuyBonusChoice) => {
@@ -491,9 +517,13 @@ function App() {
             return;
           }
 
-          // Do NOT statically set spins and balance here anymore,
-          // because we are forcing a real spin that visually lands scatters
-          // which will report the win and free spins.
+          // If bonus_boost: just toggle it on without spinning
+          if ((choice.id as string) === 'bonus_boost') {
+            setBoostActive(true);
+            setBuyBonusOpen(false);
+            return;
+          }
+
           bonusStartBetMultiplierRef.current = choice.startBetMultiplier;
           setBuyBonusOpen(false);
           

@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
+import { formatBalance } from '../../stake/stakeEngineHelpers';
 
 type BonusId = 'goal_rush' | 'counter_attack';
 
@@ -12,14 +13,16 @@ export type BuyBonusChoice = {
   accent: 'green' | 'purple' | 'blue';
 };
 
-const money = (value: number) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+
 
 export interface BuyBonusModalProps {
   open: boolean;
   onClose: () => void;
   balance: number;
   currentBet: number;
+  currency?: string;
+  boostActive?: boolean;
+  onDeactivateBoost?: () => void;
   onIncreaseBet: () => void;
   onDecreaseBet: () => void;
   onBuy: (choice: BuyBonusChoice) => void;
@@ -30,11 +33,16 @@ export default function BuyBonusModal({
   onClose,
   balance,
   currentBet,
+  currency,
+  boostActive = false,
+  onDeactivateBoost,
   onIncreaseBet,
   onDecreaseBet,
   onBuy,
 }: BuyBonusModalProps) {
   const [selectedChoice, setSelectedChoice] = useState<BuyBonusChoice | null>(null);
+  const cur = currency ?? 'USD';
+  const money = (value: number) => formatBalance(value, cur);
 
   // Reset selected choice when modal closes
   useEffect(() => {
@@ -146,6 +154,26 @@ export default function BuyBonusModal({
             </div>
           ) : (
             <>
+              {/* ── Bonus Boost Active Banner ── */}
+              {boostActive && (
+                <div className="mb-4 rounded-[14px] bg-[#1f4a9e]/60 ring-1 ring-[#1f8fff]/60 px-4 py-3 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">⚡</span>
+                    <div>
+                      <div className="text-[#cce8ff] font-extrabold text-sm">Bonus Boost Active</div>
+                      <div className="text-[#7ab4ff] text-xs mt-0.5">Each spin costs 2× your bet</div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onDeactivateBoost}
+                    className="shrink-0 rounded-[10px] bg-[#c6291f] px-4 py-2 text-white font-extrabold text-sm hover:brightness-110 active:scale-[0.97] transition shadow-[0_0_15px_rgba(198,41,31,0.4)]"
+                  >
+                    Deactivate
+                  </button>
+                </div>
+              )}
+
               {/* Select Bet Amount row */}
               <div className="rounded-[14px] bg-[#151518]/70 ring-1 ring-white/10 px-4 py-4">
             <div className="flex items-center justify-between gap-3">
@@ -180,6 +208,9 @@ export default function BuyBonusModal({
           {/* Bonus cards */}
           <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4">
             {choices.map((c) => {
+              const isBoostCard = (c.id as string) === 'bonus_boost';
+              const isActive = isBoostCard && boostActive;
+
               const accent =
                 c.accent === 'green'
                   ? {
@@ -208,24 +239,33 @@ export default function BuyBonusModal({
                 <button
                   key={c.id}
                   type="button"
-                  onClick={() => setSelectedChoice(c)}
+                  onClick={() => {
+                    if (isActive) return; // already on — use deactivate banner instead
+                    setSelectedChoice(c);
+                  }}
+                  disabled={isActive}
                   className={[
                     'rounded-[16px] bg-[#121214]/70 px-4 py-4 text-left',
-                    'hover:translate-y-[-1px] active:translate-y-0 active:scale-[0.99] transition',
+                    isActive
+                      ? 'opacity-50 cursor-not-allowed'
+                      : 'hover:translate-y-[-1px] active:translate-y-0 active:scale-[0.99] transition',
                     accent.ring,
                     accent.glow,
                   ].join(' ')}
                 >
                   <div className="flex items-center gap-2">
                     <div className={['font-extrabold', accent.title].join(' ')}>{c.title}</div>
+                    {isActive && <span className="text-[10px] bg-[#1f8fff]/30 text-[#cce8ff] px-2 py-0.5 rounded-full font-bold">ON</span>}
                   </div>
                   <div className="mt-2 text-sm text-white/70">{c.subtitle}</div>
 
                   <div className={['mt-3 rounded-[12px] px-3 py-2', accent.pill].join(' ')}>
-                    <div className="text-[#f2d27a] font-extrabold tabular-nums">{money(cost)}</div>
+                    <div className="text-[#f2d27a] font-extrabold tabular-nums">
+                      {isBoostCard ? `${money(currentBet * 2)}/spin` : money(cost)}
+                    </div>
                   </div>
                   <div className="mt-2 text-xs text-white/50">
-                    {c.costMultiplier}x Bet
+                    {isBoostCard ? '2× Bet per spin' : `${c.costMultiplier}x Bet`}
                   </div>
                 </button>
               );

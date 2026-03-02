@@ -12,14 +12,16 @@ export interface SlotMachineHandle {
 
 interface SlotMachineProps {
   onSpinComplete?: () => void;
-  boostActive?: boolean;
+  instantSpin?: boolean;
+  turboSpin?: boolean;
   winResult: WinResult | null;
   reelStrips?: number[][];
 }
 
 const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>(({
   onSpinComplete,
-  boostActive = false,
+  instantSpin = false,
+  turboSpin = false,
   winResult,
   reelStrips = REEL_STRIPS,
 }, ref) => {
@@ -36,26 +38,40 @@ const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>(({
   ];
 
   useImperativeHandle(ref, () => ({
-    spin: (stopIndices: number[], spinCount: number = 5) => {
+    spin: (stopIndices: number[], spinCount: number = 2) => {
       if (isSpinning) return;
       setIsSpinning(true);
       setCurrentStopIndices(stopIndices);
 
+      // Speed profile: instant > turbo > normal
+      //                  STOP_GAP  LOOP_DUR  LANDING_DUR  spinCycles
+      // normal:           0.20s     0.15s      0.85s        spinCount
+      // turbo:            0.12s     0.10s      0.50s        1
+      // instant:          0.06s     0.015s     0.12s        spinCount
+      const STOP_GAP    = instantSpin ? 0.06  : turboSpin ? 0.12  : 0.20;
+      const LOOP_DUR    = instantSpin ? 0.015 : turboSpin ? 0.10  : 0.15;
+      const LANDING_DUR = instantSpin ? 0.12  : turboSpin ? 0.50  : 0.85;
+      const animMult    = instantSpin ? 0.1   : 1;
+      const cycles      = turboSpin  ? 1 : spinCount;  // turbo does fewer loops
+
       reelRefs.forEach((reelRef, index) => {
         if (reelRef.current) {
-           const delay = index * 0.1;
-           reelRef.current.spin(
-             spinCount + (index * 0.5),
-             stopIndices[index],
-             delay,
-             boostActive ? 2 : 1
-           );
+          const stopDelay = index * STOP_GAP;
+          reelRef.current.spin(
+            cycles,
+            stopIndices[index],
+            stopDelay,
+            animMult
+          );
         }
       });
 
-      const baseDuration = (spinCount + 4) * 0.15;
-      const landingDelay = 1.0; 
-      const totalTime = (baseDuration + landingDelay) * 1000 + 500;
+      const lastStopDelay  = (reelRefs.length - 1) * STOP_GAP;
+      const extraLoopsLast = lastStopDelay > 0 ? Math.ceil(lastStopDelay / LOOP_DUR) : 0;
+      const lastLoopEnd    = (cycles + extraLoopsLast) * LOOP_DUR;
+      const totalTime      = instantSpin
+        ? 400
+        : (lastLoopEnd + LANDING_DUR) * 1000 + 500;
 
       setTimeout(() => {
         setIsSpinning(false);
@@ -86,15 +102,18 @@ const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>(({
             bonusTriggered={bonusTriggered}
           />
         ))}
-        {!isSpinning && winResult && (
-           <div className="absolute inset-0 pointer-events-none z-20">
-               <PaylineOverlay
-                 winningLines={winResult.winningLines}
-                 onPhaseChange={setPaylinePhase}
-               />
-           </div>
-        )}
       </div>
+
+      {/* PaylineOverlay MUST be outside the reels-grid (overflow:hidden) so the SVG
+          getBoundingClientRect() covers the full container correctly */}
+      {!isSpinning && winResult && (
+        <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 25 }}>
+          <PaylineOverlay
+            winningLines={winResult.winningLines}
+            onPhaseChange={setPaylinePhase}
+          />
+        </div>
+      )}
 
       <WinEffects
         winResult={winResult}
