@@ -98,7 +98,7 @@ const Reel = forwardRef<ReelHandle, ReelProps>(({
   const uniqueCount = baseStrip.length;
 
   return (
-    <div className="relative overflow-hidden h-full flex-1 border-r border-black/10 bg-gray-900"> 
+    <div className="relative overflow-hidden h-full flex-1 border-r border-black/10" style={{ backgroundColor: 'rgba(0,0,0,0.40)' }}> 
       <div className="absolute inset-0 z-10 pointer-events-none"></div>
 
       <div 
@@ -149,7 +149,7 @@ const Reel = forwardRef<ReelHandle, ReelProps>(({
                 src={displayImage} 
                 alt={symbol.name}
                 className={`
-                  w-[70%] h-[70%] object-contain filter drop-shadow-md transition-all duration-500
+                  w-[97%] h-[97%] object-contain filter drop-shadow-md transition-all duration-500
                   ${isTriggeringScatter ? 'animate-scatter-bonus z-30 scale-125' : isWinner ? 'animate-bounce-zoom z-20 scale-110 drop-shadow-[0_0_15px_rgba(255,215,0,0.8)]' : ''}
                   ${shouldDim && !isWinner ? 'opacity-40 grayscale-[0.5] scale-90 blur-[1px]' : ''}
                 `}

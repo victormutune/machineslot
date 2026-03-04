@@ -1,22 +1,23 @@
 // Symbols
-import sym7 from "./symbols/Yellowcard_transparent.png";
-import symA from "./symbols/A.png";
-import symBoot from "./symbols/Boot.png";
-import symFlag from "./symbols/FLAG.png";
+import sym7 from "./symbols/7 (1).png";
+import symA from "./symbols/A (1).png";
+import symBoot from "./symbols/boot (1).png";
+import symFlag from "./symbols/flag (1).png";
 import symFootball from "./symbols/FOOTBALL.png";
-import symJ from "./symbols/Armband_transparent.png";
-import symK from "./symbols/K.png";
-import symQ from "./symbols/Gloves_transparent.png";
-import symTrophy from "./symbols/Trophy.png";
-import symWhistle from "./symbols/Whistle.png";
+import symJ from "./symbols/J (1).png";
+import symK from "./symbols/K3.png";
+import symQ from "./symbols/Q (1).png";
+import symTrophy from "./symbols/trophy (1).png";
+import symWhistle from "./symbols/whistle (1).png";
 import symBonus from "./symbols/Bonus.png";
 
 // Theme
 import background from "./theme/BACKGROUND.png";
-import frame from "./theme/football_slot_frame.png";
+import frame from "./theme/Medieval slot machine frame design.png";
 import Back from "./theme/Back.png";
 import BACKG from "./theme/BACKG.png";
-import BAKI from "./theme/BAKI.png"
+import BAKI from "./theme/BAKI.png";
+import stone from "./theme/stone.png";
 // Audio
 import bgMusic from "./mascot/lab_slots_bgm.mp3";
 import spinStartSound from "./mascot/spin_start.mp3";
@@ -145,7 +146,16 @@ const REEL_5 = [
   2, 2, 3, 3, 7, 7, 8, 8, 0
 ];
 
-export const REEL_STRIPS = [REEL_1, REEL_2, REEL_3, REEL_4, REEL_5];
+const REEL_6 = [
+  6, 1, 5, 9, 6, 1, 5, 9, 6, 1, 5, 9,
+  2, 2, 3, 3, 7, 7, 0, 8, 8,
+  5, 5, 6, 6, 1, 1, 2, 2, 7,
+  9, 9, 7, 7, 3, 3, 0, 8, 8,
+  1, 1, 5, 5, 6, 6, 9, 9, 4, // Scatter
+  2, 2, 3, 3, 7, 7, 8, 8, 0
+];
+
+export const REEL_STRIPS = [REEL_1, REEL_2, REEL_3, REEL_4, REEL_5, REEL_6];
 
 // Bonus Strips - Richer winning potential
 // Keeping similar structure but maybe more high value symbols (0, 6, 8)
@@ -154,13 +164,15 @@ const BONUS_REEL_2 = [...REEL_2].map(s => (s === 3 || s === 5) ? 6 : s);
 const BONUS_REEL_3 = [...REEL_3].map(s => (s === 2 || s === 7) ? 8 : s);
 const BONUS_REEL_4 = [...REEL_4].map(s => (s === 1 || s === 9) ? 0 : s);
 const BONUS_REEL_5 = [...REEL_5].map(s => (s === 3 || s === 5) ? 6 : s);
+const BONUS_REEL_6 = [...REEL_6].map(s => (s === 2 || s === 7) ? 8 : s);
 
-export const BONUS_REEL_STRIPS = [BONUS_REEL_1, BONUS_REEL_2, BONUS_REEL_3, BONUS_REEL_4, BONUS_REEL_5];
+export const BONUS_REEL_STRIPS = [BONUS_REEL_1, BONUS_REEL_2, BONUS_REEL_3, BONUS_REEL_4, BONUS_REEL_5, BONUS_REEL_6];
 
 
 export const ASSETS = {
   background,
   BAKI,
+  stone,
   Back,
   BACKG,
   frame,

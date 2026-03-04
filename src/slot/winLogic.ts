@@ -27,27 +27,31 @@ export interface WinningPosition {
 /* ================= CONSTANTS ================= */
 
 const ROWS = 4;
-const COLS = 5;
+const COLS = 6;
 
 /* ================= PAYLINES (16) ================= */
 
 const PAYLINES: number[][] = [
-  [0, 0, 0, 0, 0],
-  [1, 1, 1, 1, 1],
-  [2, 2, 2, 2, 2],
-  [3, 3, 3, 3, 3],
-  [0, 1, 2, 1, 0],
-  [3, 2, 1, 2, 3],
-  [1, 2, 3, 2, 1],
-  [2, 1, 0, 1, 2],
-  [0, 1, 0, 1, 0],
-  [1, 0, 1, 0, 1],
-  [2, 3, 2, 3, 2],
-  [3, 2, 3, 2, 3],
-  [0, 1, 2, 3, 2],
-  [2, 1, 2, 1, 2],
-  [1, 2, 1, 2, 1],
-  [2, 1, 2, 1, 2],
+  [0, 0, 0, 0, 0, 0],
+  [1, 1, 1, 1, 1, 1],
+  [2, 2, 2, 2, 2, 2],
+  [3, 3, 3, 3, 3, 3],
+  [0, 1, 2, 1, 0, 1],
+  [3, 2, 1, 2, 3, 2],
+  [1, 2, 3, 2, 1, 2],
+  [2, 1, 0, 1, 2, 1],
+  [0, 1, 0, 1, 0, 1],
+  [1, 0, 1, 0, 1, 0],
+  [2, 3, 2, 3, 2, 3],
+  [3, 2, 3, 2, 3, 2],
+  [0, 1, 2, 3, 2, 1],
+  [3, 2, 1, 0, 1, 2],
+  [1, 2, 1, 2, 1, 2],
+  [2, 1, 2, 1, 2, 1],
+  [0, 0, 1, 2, 1, 0],
+  [3, 3, 2, 1, 2, 3],
+  [1, 1, 2, 3, 2, 1],
+  [2, 2, 1, 0, 1, 2],
 ];
 
 /* ================= GRID ================= */
@@ -147,13 +151,17 @@ const calculateOnce = (
       else break;
     }
 
+    // Extend symbol payouts to cover 6-of-a-kind if not defined
+    // (uses 5-match payout as fallback)
+
     if (match < 3) return;
 
     const symbol = SYMBOLS.find(s => s.id === first);
     if (!symbol) return;
 
-    // @ts-ignore
-    const payout = symbol.payouts ? symbol.payouts?.[match] : 0;
+    // @ts-ignore — fall back to 5x payout * 2 for 6-of-a-kind when no explicit entry
+    const payouts: Record<number, number> = (symbol as any).payouts ?? {};
+    const payout = payouts[match] ?? (match === 6 ? (payouts[5] ?? 0) * 2 : 0);
     const winAmount = (payout || 0) * bet;
     totalWin += winAmount;
 
@@ -219,7 +227,7 @@ export const calculateWin = (
     let placedScatters = 0;
     
     // Pick requiredScatters number of specific random columns to place scatters on
-    const availableCols = [0, 1, 2, 3, 4].sort(() => 0.5 - Math.random());
+    const availableCols = [0, 1, 2, 3, 4, 5].sort(() => 0.5 - Math.random());
     const targetCols = availableCols.slice(0, requiredScatters);
 
     // Map each target column to a new stop index that will force a scatter into the view

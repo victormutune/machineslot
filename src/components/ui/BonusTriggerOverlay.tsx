@@ -47,9 +47,9 @@ const BonusTriggerOverlay: React.FC<BonusTriggerOverlayProps> = ({ freeSpinsWon,
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center"
+      className="fixed inset-0 z-[9999] flex items-center justify-center"
       style={{
-        backgroundImage: `url(${ASSETS.BAKI})`,
+        backgroundImage: `url(${ASSETS.stone})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
@@ -88,7 +88,7 @@ const BonusTriggerOverlay: React.FC<BonusTriggerOverlayProps> = ({ freeSpinsWon,
             backgroundSize: '100% 100%',
             backgroundRepeat: 'no-repeat',
             backgroundPosition: 'center',
-            zIndex: 50,
+            zIndex: 30,
           }}
         />
 
@@ -96,11 +96,11 @@ const BonusTriggerOverlay: React.FC<BonusTriggerOverlayProps> = ({ freeSpinsWon,
         <div
           className="absolute"
           style={{
-            width: '75%',
-            height: '73%',
-            background: 'linear-gradient(170deg, #0a0a2e 0%, #0d1a3a 40%, #0a0a1e 100%)',
+            width: '90%',
+            height: '71%',
+            background: '#000000',
             borderRadius: '6px',
-            zIndex: 10,
+            zIndex: 40,
             boxShadow: 'inset 0 0 40px rgba(0,0,0,0.8)',
           }}
         />
@@ -108,7 +108,7 @@ const BonusTriggerOverlay: React.FC<BonusTriggerOverlayProps> = ({ freeSpinsWon,
         {/* ── Content inside the frame ── */}
         <div
           className="relative flex flex-col items-center justify-center text-center gap-2 px-4"
-          style={{ zIndex: 30, width: '85%', height: '73%' }}
+          style={{ zIndex: 50, width: '85%', height: '73%' }}
         >
           {/* CONGRATULATIONS */}
           <h1

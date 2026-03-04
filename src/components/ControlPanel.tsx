@@ -64,151 +64,19 @@ export default function SlotControlPanel({
 
   return (
     <>
-      {/* ================= MOBILE LAYOUT ================= */}
-      <div className="lg:hidden fixed inset-x-0 bottom-0 z-50 flex flex-col justify-end pb-2 pointer-events-none overflow-visible">
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none" />
 
-        <div className="relative z-10 w-full flex flex-col items-center pointer-events-auto">
-          {/* Status */}
-          <div className="mb-3">
-            <h2 className="text-white font-black text-xl tracking-wider drop-shadow-md uppercase text-center animate-pulse">
-              {spinning ? 'GOOD LUCK!' : 'PLACE YOUR BETS!'}
-            </h2>
-          </div>
-
-          {/* Main Controls Row */}
-          <div className="flex items-center justify-center gap-6 mb-3 w-full px-4">
-            {/* Decrease Bet */}
-            <button
-              onClick={onDecreaseBet}
-              disabled={spinning || atMin}
-              className="w-10 sm:w-12 h-10 sm:h-12 rounded-full border-2 border-white/20 bg-black/40 backdrop-blur-sm flex items-center justify-center text-white active:scale-90 transition disabled:opacity-40"
-            >
-              <svg className="w-5 sm:w-6 h-5 sm:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-            </button>
-
-            {/* Spin Button */}
-            <button
-              onClick={onSpin}
-              disabled={spinning}
-              className={`w-18 sm:w-20 h-18 sm:h-20 rounded-full border-4 border-white/20 bg-white/10 backdrop-blur-md flex flex-col items-center justify-center shadow-[0_0_15px_rgba(255,255,255,0.1)] active:scale-95 transition ${spinning ? 'opacity-80' : ''}`}
-            >
-              {freeSpinsRemaining > 0 ? (
-                <>
-                  <span className="text-[8px] sm:text-[10px] font-black text-yellow-400 -mb-1 mt-1">FREE</span>
-                  <span className="text-2xl sm:text-3xl font-black text-white leading-none">{freeSpinsRemaining}</span>
-                  <span className="text-[8px] sm:text-[10px] font-black text-yellow-400 -mt-1 mb-1">SPINS</span>
-                </>
-              ) : (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`w-10 sm:w-12 h-10 sm:h-12 text-white ${spinning ? 'animate-spin' : ''}`}>
-                  <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
-                  <path d="M21 3v5h-5" />
-                </svg>
-              )}
-            </button>
-
-            {/* Increase Bet */}
-            <button
-              onClick={onIncreaseBet}
-              disabled={spinning || atMax}
-              className="w-10 sm:w-12 h-10 sm:h-12 rounded-full border-2 border-white/20 bg-black/40 backdrop-blur-sm flex items-center justify-center text-white active:scale-90 transition disabled:opacity-40"
-            >
-              <svg className="w-5 sm:w-6 h-5 sm:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-            </button>
-          </div>
-
-          {/* Bottom Row */}
-          <div className="flex items-center justify-between w-full px-6 mb-2">
-            {/* Menu */}
-            <div className="flex items-center gap-2 overflow-visible pointer-events-auto">
-              <HamburgerMenu
-                onOpenPaytable={onOpenPaytable}
-                isMuted={isMuted}
-                onToggleMute={onToggleMute}
-                volume={volume}
-                onVolumeChange={onVolumeChange}
-                instantSpin={instantSpin}
-                onToggleInstantSpin={onToggleInstantSpin}
-                turboSpin={turboSpin}
-                onToggleTurboSpin={onToggleTurboSpin}
-              />
-            </div>
-
-            {/* Free Spins / Buy Bonus / Deactivate Boost */}
-            <div className="flex items-end gap-2">
-              {freeSpinsRemaining > 0 ? (
-                <button
-                  disabled
-                  className="h-10 w-32 rounded-full border border-yellow-400/50 bg-black/40 flex flex-col items-center justify-center"
-                >
-                  <div className="flex flex-col items-center">
-                    <span className="text-[9px] text-yellow-400 font-bold leading-none">FREE SPINS</span>
-                    <span className="text-lg text-white font-black leading-none">{freeSpinsRemaining}</span>
-                  </div>
-                </button>
-              ) : boostActive ? (
-                <button
-                  onClick={onToggleBoost}
-                  disabled={spinning}
-                  className="h-10 px-3 rounded-full border border-red-400/60 bg-red-600/30 flex items-center justify-center hover:bg-red-600/50 active:scale-95 transition disabled:opacity-50"
-                >
-                  <span style={{ fontSize: '8px', letterSpacing: '0.05em', transform: 'scaleX(0.85)', display: 'inline-block', fontWeight: 900, color: '#fca5a5', whiteSpace: 'nowrap' }}>DEACTIVATE</span>
-                </button>
-              ) : (
-                <button
-                  onClick={onBuyBonus}
-                  disabled={spinning}
-                  className="h-10 w-16 rounded-full border border-white/20 bg-black/40 flex items-center justify-center hover:bg-white/10 active:scale-95 transition disabled:opacity-50"
-                >
-                  <div className="flex -space-x-1">
-                    <div className="w-3 h-3 rounded-full border border-white bg-yellow-400" />
-                    <div className="w-3 h-3 rounded-full border border-white bg-yellow-400" />
-                  </div>
-                </button>
-              )}
-            </div>
-
-            {/* Auto Spin */}
-            <button
-              onClick={onToggleAutoSpin}
-              className={`w-14 h-8 rounded-full border border-white/20 flex items-center justify-center text-white hover:bg-white/10 ${autoSpinEnabled ? 'bg-green-600/50' : 'bg-black/40'}`}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="3" y1="12" x2="21" y2="12" />
-                <line x1="3" y1="6" x2="21" y2="6" />
-                <line x1="3" y1="18" x2="21" y2="18" />
-              </svg>
-            </button>
-          </div>
-
-          {/* Footer: Credit / Bet */}
-          <div className="flex gap-4 text-xs font-bold text-[#f2d27a] tracking-wider mb-2">
-            <span>CREDIT {formatBalance(balance, cur)}</span>
-            <span className="flex items-center gap-1">
-              BET {formatBet(displayBet, cur)}
-            </span>
-          </div>
-        </div>
-      </div>
-
-
-      {/* ================= DESKTOP LAYOUT (LG+) ================= */}
-      <div className="hidden lg:flex w-full justify-center p-4 fixed bottom-0 left-0 z-50">
+      {/* ================= CONTROL BAR (all screen sizes) ================= */}
+      <div className="flex w-full justify-center px-2 py-2 sm:p-4 fixed bottom-0 left-0 z-50">
         <div className="relative flex items-center justify-center w-full max-w-3xl">
 
 
           {/* Buy Bonus / Deactivate Boost Button */}
-          <div className="absolute left-0 z-20 flex flex-col items-center justify-center h-16 w-16 -ml-2">
+          <div className="absolute left-0 z-20 flex flex-col items-center justify-center h-10 w-10 sm:h-16 sm:w-16 -ml-1 sm:-ml-2">
             {boostActive ? (
               <button
                 onClick={onToggleBoost}
                 disabled={spinning}
-                className="w-16 h-16 rounded-full bg-red-600 border-2 border-red-400 shadow-lg shadow-red-900/50 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer disabled:opacity-50 animate-pulse"
+              className="w-10 h-10 sm:w-16 sm:h-16 rounded-full bg-red-600 border-2 border-red-400 shadow-lg shadow-red-900/50 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer disabled:opacity-50 animate-pulse"
               >
                 <span style={{ fontSize: '9px', letterSpacing: '0.04em', transform: 'scaleX(0.78)', display: 'inline-block', fontWeight: 900, color: 'white', whiteSpace: 'nowrap' }}>DEACTIVATE</span>
               </button>
@@ -216,7 +84,7 @@ export default function SlotControlPanel({
               <button
                 onClick={onBuyBonus}
                 disabled={spinning}
-                className="w-16 h-16 rounded-full bg-[#fbbf24] border-2 border-[#f59e0b] shadow-lg flex flex-col items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer disabled:opacity-50"
+                className="w-10 h-10 sm:w-16 sm:h-16 rounded-full bg-[#fbbf24] border-2 border-[#f59e0b] shadow-lg flex flex-col items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer disabled:opacity-50"
               >
                 <span className="text-black font-extrabold text-[10px] leading-tight text-center">
                   BUY<br />BONUS
@@ -226,13 +94,13 @@ export default function SlotControlPanel({
           </div>
 
           {/* Main Control Bar */}
-          <div className="relative bg-[#1a1b1e]/95 backdrop-blur-sm w-full max-w-2xl flex flex-col rounded-sm shadow-2xl border-t border-white/10 ml-8">
+          <div className="relative bg-[#1a1b1e]/95 backdrop-blur-sm w-full max-w-2xl flex flex-col rounded-sm shadow-2xl border-t border-white/10 ml-6 sm:ml-8">
 
             {/* Controls Row */}
-            <div className="h-16 flex items-center px-4">
+            <div className="h-12 sm:h-16 flex items-center px-2 sm:px-4">
 
               {/* Left: Menu & Balance */}
-              <div className="flex items-center gap-6 pl-8">
+              <div className="flex items-center gap-2 sm:gap-6 pl-4 sm:pl-8">
                 <HamburgerMenu
                   onOpenPaytable={onOpenPaytable}
                   isMuted={isMuted}
@@ -246,8 +114,8 @@ export default function SlotControlPanel({
                 />
 
                 <div className="flex flex-col">
-                  <span className="text-[10px] text-gray-400 font-bold tracking-wider uppercase">Balance</span>
-                  <span className="text-xl font-bold text-white tracking-wide">{formatBalance(balance, cur)}</span>
+                  <span className="hidden sm:block text-[10px] text-gray-400 font-bold tracking-wider uppercase">Balance</span>
+                  <span className="text-sm sm:text-xl font-bold text-white tracking-wide">{formatBalance(balance, cur)}</span>
                 </div>
               </div>
 
@@ -264,10 +132,10 @@ export default function SlotControlPanel({
               <div className="flex items-center gap-4 pr-18">
 
                 {/* Bet Display + Up/Down */}
-                <div className="flex items-center bg-[#0f1012] rounded-md h-12 border border-white/5 relative mr-12 overflow-hidden">
-                  <div className="flex flex-col justify-center px-4 min-w-[110px]">
-                    <span className="text-[9px] text-gray-400 font-bold tracking-wider uppercase">Current Bet</span>
-                    <span className={`text-lg font-bold flex items-center gap-2 ${boostActive ? 'text-red-400' : 'text-yellow-400'}`}>
+                <div className="flex items-center bg-[#0f1012] rounded-md h-9 sm:h-12 border border-white/5 relative mr-10 sm:mr-12 overflow-hidden">
+                  <div className="flex flex-col justify-center px-2 sm:px-4 min-w-[70px] sm:min-w-[110px]">
+                    <span className="hidden sm:block text-[9px] text-gray-400 font-bold tracking-wider uppercase">Current Bet</span>
+                    <span className={`text-sm sm:text-lg font-bold flex items-center gap-2 ${boostActive ? 'text-red-400' : 'text-yellow-400'}`}>
                       {formatBet(displayBet)}
                     </span>
                   </div>
@@ -299,7 +167,7 @@ export default function SlotControlPanel({
                   <button
                     onClick={onSpin}
                     disabled={spinning}
-                    className={`w-18 h-18 rounded-full border-4 border-[#2b2d31] bg-[#1a1b1e] flex flex-col items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all ${spinning ? 'opacity-80' : ''}`}
+                    className={`w-12 h-12 sm:w-18 sm:h-18 rounded-full border-4 border-[#2b2d31] bg-[#1a1b1e] flex flex-col items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all ${spinning ? 'opacity-80' : ''}`}
                   >
                     {freeSpinsRemaining > 0 ? (
                       <>
@@ -307,7 +175,7 @@ export default function SlotControlPanel({
                         <span className="text-[24px] font-black text-white leading-tight">{freeSpinsRemaining}</span>
                       </>
                     ) : (
-                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`text-white ${spinning ? 'animate-spin' : ''}`}>
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`sm:w-10 sm:h-10 text-white ${spinning ? 'animate-spin' : ''}`}>
                         <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
                         <path d="M21 3v5h-5" />
                       </svg>

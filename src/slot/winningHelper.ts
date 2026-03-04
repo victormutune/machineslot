@@ -6,7 +6,7 @@ import type { WinResult } from './winLogic';
  */
 export const getReelWinningRows = (
   winResult: WinResult | null,
-  cols: number = 5,
+  cols: number = 6,
   rows: number = 4
 ): boolean[][] => {
   if (!winResult || winResult.winningPositions.length === 0) {

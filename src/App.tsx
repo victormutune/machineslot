@@ -420,7 +420,7 @@ function App() {
         margin: 'auto',
         boxSizing: 'border-box',
         overflow: 'hidden',
-        backgroundImage: `url(${ASSETS.BAKI})`,
+        backgroundImage: `url(${ASSETS.stone})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
@@ -432,13 +432,13 @@ function App() {
     >
       {/* Dark overlay to dim the background image only */}
       <div className="absolute inset-0 bg-black/10 pointer-events-none" style={{ zIndex: 0 }} />
-      <div className="relative w-full flex flex-col items-center" style={{ zIndex: 1 }}>
+      <div className="relative w-full flex flex-col items-center flex-1 min-h-0" style={{ zIndex: 1 }}>
       <ClockDisplay />
       {/* ── Game Area (Board + Desktop Controls) ─────────────────────── */}
-      <div className="flex flex-col lg:flex-row items-center lg:items-center justify-center w-full px-2 sm:px-4 pb-24 lg:pb-0 max-w-[1400px] gap-4 xl:gap-12">
+      <div className="flex flex-col lg:flex-row items-center lg:items-center justify-center lg:justify-center w-full px-2 sm:px-4 pb-20 lg:pb-0 max-w-[1400px] gap-2 xl:gap-12 flex-1">
         
         {/* Slot Machine Board */}
-        <div className="w-[90%] sm:w-[80%] md:w-[45%] lg:w-[45%] xl:w-[45%] max-w-[1000px] relative transition-all duration-300 flex-shrink-0">
+        <div className="w-[100%] sm:w-[100%] md:w-[85%] lg:w-[50%] xl:w-[50%] max-w-[1000px] relative transition-all duration-300 flex-shrink-0">
           <GoldenFrame width="100%" maxWidth="100%">
             <SlotMachine
               ref={slotMachineRef}

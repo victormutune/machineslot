@@ -27,9 +27,10 @@ const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>(({
 }, ref) => {
   
   const [isSpinning, setIsSpinning] = React.useState(false);
-  const [currentStopIndices, setCurrentStopIndices] = React.useState<number[]>([0, 0, 0, 0, 0]);
+  const [currentStopIndices, setCurrentStopIndices] = React.useState<number[]>([0, 0, 0, 0, 0, 0]);
 
   const reelRefs = [
+    useRef<ReelHandle>(null),
     useRef<ReelHandle>(null),
     useRef<ReelHandle>(null),
     useRef<ReelHandle>(null),
@@ -88,7 +89,7 @@ const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>(({
 
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center">
-      <div className="reels-grid grid grid-cols-5 gap-1 w-full h-full relative"> 
+      <div className="reels-grid grid grid-cols-6 gap-1 w-full h-full relative"> 
         {reelRefs.map((reelRef, index) => (
           <Reel
             key={index}

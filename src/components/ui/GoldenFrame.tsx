@@ -24,7 +24,7 @@ const GoldenFrame: React.FC<GoldenFrameProps> = ({
         maxWidth,
         height,
         maxHeight,
-        aspectRatio: '5/4', // Match 5 reels x 4 rows
+        aspectRatio: '6/5', // Taller ratio for 6 reels x 4 rows
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
@@ -35,24 +35,24 @@ const GoldenFrame: React.FC<GoldenFrameProps> = ({
       {/* ── Background Behind Reels (Optional but good) ── */}
       <div style={{
         position: 'absolute',
-        width: '80%',
-        height: '80%',
+        width: '90%',
+        height: '70%',
         backgroundColor: 'rgba(0,0,0)',
         borderRadius: '10px',
-        boxShadow: 'inset 0 0 0px rgba(0,0,0,0.8)',
+        boxShadow: 'inset 0 0 0px hsla(0, 0%, 0%, 0.80)',
         zIndex: 10, // Back layer
       }} />
 
       {/* ── Slot Machine Reels (Children) ── */}
       <div style={{
         position: 'relative',
-        width: '80%',
-        height: '80%',
+        width: '90%',
+        height: '75%',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 20, // Middle layer
-        padding: '10px'
+        padding: '5px'
       }}>
         {children}
       </div>
@@ -69,7 +69,7 @@ const GoldenFrame: React.FC<GoldenFrameProps> = ({
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
         pointerEvents: 'none', // Allow clicking through the clear parts of the frame image
-        zIndex: 50, // Front layer
+        zIndex: 10, // Front layer
       }} />
     </div>
   );
