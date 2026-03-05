@@ -8,26 +8,32 @@ interface ReelProps {
   order?: number[];
   winningRows?: boolean[];
   isSpinning?: boolean;
-  hasAnyWin?: boolean; 
+  hasAnyWin?: boolean;
   bonusTriggered?: boolean;
+  /** True while the sweep line is passing this column */
+  isPopped?: boolean;
+  /** True while the payline sweep is actively drawing (false between cycles) */
+  sweepActive?: boolean;
 }
 
 export interface ReelHandle {
   spin: (spins: number, stopIndex: number, stopDelay: number, boostMultiplier?: number) => void;
 }
 
-const Reel = forwardRef<ReelHandle, ReelProps>(({ 
-  rows = 4, 
+const Reel = forwardRef<ReelHandle, ReelProps>(({
+  rows = 4,
   colIndex,
-  order, 
-  winningRows, 
+  order,
+  winningRows,
   isSpinning,
   hasAnyWin = false,
-  bonusTriggered = false
+  bonusTriggered = false,
+  isPopped = false,
+  sweepActive = false,
 }, ref) => {
   const reelRef = useRef<HTMLDivElement>(null);
   const [finalStopIndex, setFinalStopIndex] = useState<number | null>(null);
-  
+
   const idToSymbol = useMemo(() => new Map(SYMBOLS.map((s) => [s.id, s])), []);
   const baseStrip = useMemo(
     () =>
@@ -38,7 +44,6 @@ const Reel = forwardRef<ReelHandle, ReelProps>(({
   );
   const REEL_SYMBOLS = [...baseStrip, ...baseStrip, ...baseStrip];
   const TOTAL_SYMBOLS = REEL_SYMBOLS.length;
-  
   const STRIP_HEIGHT_PERCENT = (TOTAL_SYMBOLS / rows) * 100;
 
   useImperativeHandle(ref, () => ({
@@ -49,34 +54,23 @@ const Reel = forwardRef<ReelHandle, ReelProps>(({
       setFinalStopIndex(null);
 
       const tl = gsap.timeline();
-      
       const stripH = reel.scrollHeight;
       const symbolH = stripH / TOTAL_SYMBOLS;
       const uniqueCount = baseStrip.length;
 
-      const loopStart = -(uniqueCount * 2 * symbolH); 
-      const loopEnd   = -(uniqueCount * symbolH); 
+      const loopStart = -(uniqueCount * 2 * symbolH);
+      const loopEnd   = -(uniqueCount * symbolH);
       const loopDuration = 0.15 * boostMultiplier;
-
-      // Extra loop cycles to keep THIS reel spinning while earlier reels are landing.
-      // This is what creates the strict left-to-right stopping order.
       const extraLoops = stopDelay > 0 ? Math.ceil(stopDelay / loopDuration) : 0;
 
       gsap.set(reel, { y: loopStart });
 
-      // ── Loop phase (all reels same speed, later reels do more loops) ──
-      tl.fromTo(reel, 
+      tl.fromTo(reel,
         { y: loopStart },
-        {
-          y: loopEnd, 
-          duration: loopDuration, 
-          ease: "none",
-          repeat: spins + extraLoops,
-        }
+        { y: loopEnd, duration: loopDuration, ease: "none", repeat: spins + extraLoops }
       );
 
-      // ── Landing phase (fixed duration — does NOT depend on stopDelay) ──
-      const targetIndex = uniqueCount + stopIndex; 
+      const targetIndex = uniqueCount + stopIndex;
       const finalY = -(targetIndex * symbolH);
       const landingDuration = 1.2 * boostMultiplier;
 
@@ -87,8 +81,8 @@ const Reel = forwardRef<ReelHandle, ReelProps>(({
           duration: landingDuration,
           ease: "power2.out",
           onComplete: () => {
-             gsap.set(reel, { y: finalY });
-             setFinalStopIndex(stopIndex);
+            gsap.set(reel, { y: finalY });
+            setFinalStopIndex(stopIndex);
           }
         }
       );
@@ -98,16 +92,19 @@ const Reel = forwardRef<ReelHandle, ReelProps>(({
   const uniqueCount = baseStrip.length;
 
   return (
-    <div className="relative overflow-hidden h-full flex-1 border-r border-black/10" style={{ backgroundColor: 'rgba(0,0,0,0.40)' }}> 
+    <div
+      className="relative overflow-hidden h-full flex-1 border-r border-black/10"
+      style={{ backgroundColor: 'rgba(0,0,0,0.40)' }}
+    >
       <div className="absolute inset-0 z-10 pointer-events-none"></div>
 
-      <div 
-        ref={reelRef} 
-        className="flex flex-col w-full" 
-        style={{ 
-            height: `${STRIP_HEIGHT_PERCENT}%`, 
-            willChange: 'transform',
-            transform: `translateY(${-100/3}%)` 
+      <div
+        ref={reelRef}
+        className="flex flex-col w-full"
+        style={{
+          height: `${STRIP_HEIGHT_PERCENT}%`,
+          willChange: 'transform',
+          transform: `translateY(${-100 / 3}%)`,
         }}
       >
         {REEL_SYMBOLS.map((symbol, i) => {
@@ -117,41 +114,44 @@ const Reel = forwardRef<ReelHandle, ReelProps>(({
 
           if (!isSpinning && finalStopIndex !== null) {
             const startVisibleIndex = uniqueCount + finalStopIndex;
-            
             if (i >= startVisibleIndex && i < startVisibleIndex + rows) {
               rowIndex = i - startVisibleIndex;
-              
               if (winningRows && winningRows[rowIndex]) {
                 isWinner = true;
-              } 
-              else if (hasAnyWin) {
-                shouldDim = true;
+              } else if (hasAnyWin) {
+                // Only dim non-winners while the sweep is active
+                shouldDim = sweepActive;
               }
             }
           }
 
-          // Determine if this is a triggering scatter
           const isTriggeringScatter = isWinner && bonusTriggered && symbol.id === 4;
-          const displayImage = isTriggeringScatter && (symbol as any).bonusImage 
-            ? (symbol as any).bonusImage 
+          const displayImage = isTriggeringScatter && (symbol as any).bonusImage
+            ? (symbol as any).bonusImage
             : symbol.image;
 
+          // Pop: only when sweep is passing this column AND it's a winner
+          const isPoppedWinner = isWinner && isPopped && sweepActive;
+
           return (
-            <div 
-              key={`${symbol.id}-${i}`} 
+            <div
+              key={`${symbol.id}-${i}`}
               data-grid-coord={rowIndex >= 0 ? `${colIndex},${rowIndex}` : undefined}
-              className="w-full flex items-center justify-center p-1" 
-              style={{
-                height: `${100 / TOTAL_SYMBOLS}%` 
-              }}
+              className="w-full flex items-center justify-center p-1"
+              style={{ height: `${100 / TOTAL_SYMBOLS}%` }}
             >
-              <img 
-                src={displayImage} 
+              <img
+                src={displayImage}
                 alt={symbol.name}
                 className={`
-                  w-[97%] h-[97%] object-contain filter drop-shadow-md transition-all duration-500
-                  ${isTriggeringScatter ? 'animate-scatter-bonus z-30 scale-125' : isWinner ? 'animate-bounce-zoom z-20 scale-110 drop-shadow-[0_0_15px_rgba(255,215,0,0.8)]' : ''}
-                  ${shouldDim && !isWinner ? 'opacity-40 grayscale-[0.5] scale-90 blur-[1px]' : ''}
+                  w-[97%] h-[97%] object-contain filter drop-shadow-md
+                  transition-all duration-300
+                  ${isTriggeringScatter
+                    ? 'animate-scatter-bonus z-30 scale-125'
+                    : isPoppedWinner
+                      ? 'symbol-sweep-pop z-20'
+                      : ''}
+                  ${shouldDim ? 'opacity-40 grayscale-[0.5] scale-90 blur-[1px]' : ''}
                 `}
               />
             </div>

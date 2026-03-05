@@ -101,38 +101,45 @@ body {
   text-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
 }
 
+/* Win amount zoom in (spring) */
+@keyframes winAmountIn {
+  0%   { opacity: 0; transform: scale(0.3) translateY(20px); }
+  70%  { opacity: 1; transform: scale(1.15) translateY(-4px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Win amount zoom out (snappy — shrinks in sync with symbol zoom-out) */
+@keyframes winAmountOut {
+  0%   { opacity: 1; transform: scale(1) translateY(0); }
+  60%  { opacity: 0; transform: scale(0.3) translateY(12px); }
+  100% { opacity: 0; transform: scale(0.1) translateY(16px); }
+}
+
 /* ================= SYMBOL ANIMATIONS ================= */
 
-@keyframes bounceZoom {
-  0%,
-  100% {
-    transform: scale(1.1);
-  }
-  50% {
-    transform: scale(1.25);
-  }
+/* Idle glow for winning symbols before/after sweep — no bounce */
+.symbol-winner-idle {
+  transform: scale(1.08);
+  filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.6))
+           drop-shadow(0 0 20px rgba(255, 215, 0, 0.3));
+  transition: transform 0.35s ease, filter 0.35s ease;
 }
 
-.animate-bounce-zoom {
-  animation: bounceZoom 1s infinite;
+/* Pop effect when the sweep line passes this column —
+   zoom IN as line touches it, zoom OUT back to idle as line leaves */
+@keyframes symbolSweepPop {
+  0%   { transform: scale(1.08); filter: drop-shadow(0 0 8px rgba(255,215,0,0.5)); }
+  20%  { transform: scale(1.40); filter: drop-shadow(0 0 28px rgba(255,255,180,1)) drop-shadow(0 0 55px rgba(255,215,0,0.95)); }
+  50%  { transform: scale(1.25); filter: drop-shadow(0 0 20px rgba(255,215,0,0.85)); }
+  80%  { transform: scale(1.12); filter: drop-shadow(0 0 12px rgba(255,215,0,0.65)); }
+  100% { transform: scale(1.08); filter: drop-shadow(0 0 8px rgba(255,215,0,0.5)); }
 }
 
-/* Slot Machine Win Animations */
-
-/* Winning Symbol Bounce and Zoom */
-@keyframes bounce-zoom {
-  0%,
-  100% {
-    transform: scale(1.1);
-  }
-  50% {
-    transform: scale(1.15);
-  }
+.symbol-sweep-pop {
+  animation: symbolSweepPop 0.9s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
 }
 
-.animate-bounce-zoom {
-  animation: bounce-zoom 0.6s ease-in-out infinite;
-}
+/* Legacy class kept for scatter bonus */
 
 /* Bonus Scatter Bounce and Shine */
 @keyframes scatter-bonus {
@@ -321,10 +328,10 @@ body {
 }
 
 /* Prevent animation jank */
-.animate-bounce-zoom,
+.symbol-sweep-pop,
 .animate-scatter-bonus,
 .animate-football-dance,
 .win-particle,
 .payline-highlight {
-  will-change: transform, opacity;
+  will-change: transform, filter;
 }
