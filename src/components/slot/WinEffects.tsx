@@ -89,9 +89,9 @@ const WinEffects: React.FC<WinEffectsProps> = ({
     } else {
       // Only animate out if it was actually showing
       if (amountAnim === 'in' || amountAnim === 'visible') {
-        // Zoom OUT quickly in sync with symbol zoom-out (~180ms)
+        // Zoom OUT smoothly in sync with symbol zoom-out
         setAmountAnim('out');
-        exitTimer.current = setTimeout(() => setAmountAnim('hidden'), 200);
+        exitTimer.current = setTimeout(() => setAmountAnim('hidden'), 350);
       }
     }
 
@@ -118,7 +118,7 @@ const WinEffects: React.FC<WinEffectsProps> = ({
                   amountAnim === 'in'
                     ? 'winAmountIn 0.1s cubic-bezier(0.34,1.56,0.64,1) forwards'
                     : amountAnim === 'out'
-                    ? 'winAmountOut 0.01s cubic-bezier(0.5,0,1,0.5) forwards'
+                    ? 'winAmountOut 0.3s ease-out forwards'
                     : undefined,
                 // hold: keep the final scale from zoom-in
                 transform: amountAnim === 'visible' ? 'scale(1)' : undefined,
@@ -137,7 +137,7 @@ const WinEffects: React.FC<WinEffectsProps> = ({
                   amountAnim === 'in'
                     ? 'winAmountIn 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards'
                     : amountAnim === 'out'
-                    ? 'winAmountOut 0.18s cubic-bezier(0.5,0,1,0.5) forwards'
+                    ? 'winAmountOut 0.3s ease-out forwards'
                     : undefined,
               }}
             >

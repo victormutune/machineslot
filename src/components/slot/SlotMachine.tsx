@@ -149,7 +149,7 @@ const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>((
         winResult={winResult}
         stopIndices={currentStopIndices}
         freeSpinsWon={winResult?.freeSpins ?? 0}
-        showAmount={paylinePhase !== 'idle'}
+        showAmount={paylinePhase === 'flowing'}
       />
     </div>
   );

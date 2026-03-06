@@ -24,7 +24,7 @@ const GoldenFrame: React.FC<GoldenFrameProps> = ({
         maxWidth,
         height,
         maxHeight,
-        aspectRatio: '6/5', // Taller ratio for 6 reels x 4 rows
+        aspectRatio: '7/6', // Taller ratio for 6 reels x 4 rows
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',

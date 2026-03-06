@@ -1,7 +1,7 @@
 // Symbols
 import sym7 from "./symbols/7 (1).png";
 import symA from "./symbols/A (1).png";
-import symBoot from "./symbols/boot (1).png";
+import symBoot from "./symbols/boot 2.png";
 import symFlag from "./symbols/flag (1).png";
 import symFootball from "./symbols/FOOTBALL.png";
 import symJ from "./symbols/J (1).png";
@@ -10,6 +10,7 @@ import symQ from "./symbols/Q (1).png";
 import symTrophy from "./symbols/trophy (1).png";
 import symWhistle from "./symbols/whistle (1).png";
 import symBonus from "./symbols/Bonus.png";
+import sym10 from "./symbols/1O.png";
 
 // Theme
 import background from "./theme/BACKGROUND.png";
@@ -96,24 +97,31 @@ export const SYMBOLS = [
     name: "Whistle",
     payouts: { 3: 0.35, 4: 2.2, 5: 8.5 } 
   },
+  {
+    id:10,
+    image:sym10,
+    name:"10",
+    payouts:{3:0.2,4:1.5,5:6}
+  }
+
 ];
 
 // Per-Reel Strips (5 separate reels)
 // OPTIMIZED: Reels 4 & 5 now have HEAVY low symbol stacks to allow 4x/5x wins
 
 const REEL_1 = [
-  6, 1, 5, 9, 6, 1, 5, 9, 6, 1, 5, 9, // 12 Lows
+  6, 10, 5, 9, 6, 10, 5, 9, 6, 10, 5, 9, // 12 Lows
   2, 6, 3, 1, 7, 5, 0, 9, 8, // Mixed
-  4, 5, 9, 6, 1, 1, 2, 2, 
+  4, 5, 9, 6, 10, 1, 2, 2, 
   9, 6, 7, 5, 3, 1, 0, 8, 
   1, 5, 5, 6, 6, 9, 9, 4,
   2, 6, 3, 1, 7, 5, 8, 8, 0  
 ];
 
 const REEL_2 = [
-  6, 1, 5, 9, 6, 1, 5, 9, 6, 1, 5, 9, 
+  6, 1, 5, 9, 6, 10, 5, 9, 6, 1, 5, 9, 
   2, 6, 3, 1, 7, 5, 0, 9, 8,
-  4, 5, 9, 6, 1, 1, 2, 2,
+  4, 5, 9, 6, 1, 10, 2, 2,
   9, 6, 7, 5, 3, 1, 0, 8,
   1, 5, 5, 6, 6, 9, 9, 7, 
   2, 6, 3, 1, 7, 5, 8, 8, 0
@@ -121,37 +129,37 @@ const REEL_2 = [
 
 const REEL_3 = [
   6, 1, 5, 9, 6, 1, 5, 9, 6, 1, 5, 9, 
-  2, 6, 3, 1, 7, 5, 0, 9, 8,
-  5, 5, 9, 6, 1, 1, 2, 2, 4,
-  9, 6, 7, 5, 3, 1, 0, 8,
+  2, 6, 3, 10, 7, 5, 0, 9, 8,
+  5, 5, 9, 6, 10, 1, 2, 2, 4,
+  9, 6, 7, 5, 3, 10, 0, 8,
   1, 5, 5, 6, 6, 9, 9, 7,
-  2, 6, 3, 1, 7, 5, 8, 8, 0
+  2, 6, 3, 10, 7, 5, 8, 8, 0
 ];
 
 const REEL_4 = [
-  6, 1, 5, 9, 6, 1, 5, 9, 6, 1, 5, 9, // Matching Reels 1-3
+  6, 1, 5, 9, 6, 10, 5, 9, 6, 1, 5, 9, // Matching Reels 1-3
   2, 2, 3, 3, 7, 7, 0, 8, 8,
-  5, 5, 6, 6, 1, 1, 2, 2, 7,
+  5, 5, 6, 6, 10, 10, 2, 2, 7,
   9, 9, 7, 7, 3, 3, 0, 8, 8,
-  1, 1, 5, 5, 6, 6, 9, 9, 4,
+  1, 10, 5, 5, 6, 6, 9, 9, 4,
   2, 2, 3, 3, 7, 7, 8, 8, 0
 ];
 
 const REEL_5 = [
   6, 1, 5, 9, 6, 1, 5, 9, 6, 1, 5, 9, // Matching Reels 1-3
   2, 2, 3, 3, 7, 7, 0, 8, 8,
-  5, 5, 6, 6, 1, 1, 2, 2, 7,
+  5, 5, 6, 6, 10, 10, 2, 2, 7,
   9, 9, 7, 7, 3, 3, 0, 8, 8,
-  1, 1, 5, 5, 6, 6, 9, 9, 4, // Scatter
+  1, 10, 5, 5, 6, 6, 9, 9, 4, // Scatter
   2, 2, 3, 3, 7, 7, 8, 8, 0
 ];
 
 const REEL_6 = [
-  6, 1, 5, 9, 6, 1, 5, 9, 6, 1, 5, 9,
+  6, 1, 5, 9, 6, 10, 5, 9, 6, 10, 5, 9,
   2, 2, 3, 3, 7, 7, 0, 8, 8,
-  5, 5, 6, 6, 1, 1, 2, 2, 7,
+  5, 5, 6, 6, 10, 10, 2, 2, 7,
   9, 9, 7, 7, 3, 3, 0, 8, 8,
-  1, 1, 5, 5, 6, 6, 9, 9, 4, // Scatter
+  10, 10, 5, 5, 6, 6, 9, 9, 4, // Scatter
   2, 2, 3, 3, 7, 7, 8, 8, 0
 ];
 

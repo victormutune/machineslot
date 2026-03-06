@@ -4,7 +4,6 @@ import SlotMachine, { type SlotMachineHandle } from './components/slot/SlotMachi
 import ControlPanel from './components/ControlPanel';
 import GoldenFrame from './components/ui/GoldenFrame';
 import Mascot from './components/ui/Mascot';
-import WinEffects from './components/slot/WinEffects';
 import BuyBonusModal, { type BuyBonusChoice } from './components/modals/BuyBonusModal';
 import AutoSpinModal from './components/modals/AutoSpinModal';
 import PayTableModal from './components/modals/PayTableModal';
@@ -28,7 +27,6 @@ function App() {
   const currentBet = BET_LEVELS[currentBetIndex];
   const [, setLastWin] = useState(0);
   const [winResult, setWinResult] = useState<WinResult | null>(null);
-  const [lastStopIndices, setLastStopIndices] = useState<number[]>([]);
   const [isSpinning, setIsSpinning] = useState(false);
   const isSpinningRef = useRef(false);
   const [spinCount] = useState(5);
@@ -283,7 +281,6 @@ function App() {
              setFreeSpinsRemaining(prev => prev - 1);
          }
          
-         setLastStopIndices(finalStops);
          if (slotMachineRef.current) {
             slotMachineRef.current.spin(finalStops, spinCount);
          }
@@ -308,7 +305,6 @@ function App() {
        pendingWinResultRef.current = result;
        pendingFreeSpinsRef.current = result.freeSpins || 0;
 
-       setLastStopIndices(finalStops);
        if (slotMachineRef.current) {
          slotMachineRef.current.spin(finalStops, spinCount);
        }
@@ -438,7 +434,7 @@ function App() {
       <div className="flex flex-col lg:flex-row items-center lg:items-center justify-center lg:justify-center w-full px-2 sm:px-4 pb-20 lg:pb-0 max-w-[1400px] gap-2 xl:gap-12 flex-1">
         
         {/* Slot Machine Board */}
-        <div className="w-[100%] sm:w-[100%] md:w-[85%] lg:w-[50%] xl:w-[50%] max-w-[1000px] relative transition-all duration-300 flex-shrink-0">
+        <div className="w-[100%] sm:w-[100%] md:w-[85%] lg:w-[52%] xl:w-[52%] max-w-[1000px] relative transition-all duration-300 flex-shrink-0">
           <GoldenFrame width="100%" maxWidth="100%">
             <SlotMachine
               ref={slotMachineRef}
@@ -447,11 +443,6 @@ function App() {
               turboSpin={turboSpin}
               winResult={winResult}
               reelStrips={currentStrips}
-            />
-            <WinEffects
-              winResult={winResult}
-              stopIndices={lastStopIndices}
-              freeSpinsWon={lastFreeSpinsWon}
             />
           </GoldenFrame>
           

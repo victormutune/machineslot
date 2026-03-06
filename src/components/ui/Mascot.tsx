@@ -30,8 +30,8 @@ const Mascot: React.FC<MascotProps> = ({ isWinning }) => {
       className="mascot-container"
       style={{
         position: 'absolute',
-        right: '-15%', // Snap it right next to the frame
-        bottom: '15%', // Anchor to the bottom
+        right: '-22%', // Snap it right next to the frame
+        bottom: '9%', // Anchor to the bottom
         width: '25%', // Size relative to the slot machine container
         height: 'auto',
         zIndex: 50, // Ensure it's in front of the frame
