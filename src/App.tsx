@@ -430,60 +430,65 @@ function App() {
       <div className="absolute inset-0 bg-black/10 pointer-events-none" style={{ zIndex: 0 }} />
       <div className="relative w-full flex flex-col items-center flex-1 min-h-0" style={{ zIndex: 1 }}>
       <ClockDisplay />
-      {/* ── Game Area (Board + Desktop Controls) ─────────────────────── */}
-      <div className="flex flex-col lg:flex-row items-center lg:items-center justify-center lg:justify-center w-full px-2 sm:px-4 pb-20 lg:pb-0 max-w-[1400px] gap-2 xl:gap-12 flex-1">
+      {/* ── Game Area (Board + Control) ─────────────────────── */}
+      <div className="flex flex-col items-center justify-center w-full px-2 sm:px-4 flex-1 min-h-0 gap-2 sm:gap-4 lg:gap-6 pt-16 sm:pt-4">
         
         {/* Slot Machine Board */}
-        <div className="w-[100%] sm:w-[100%] md:w-[85%] lg:w-[52%] xl:w-[52%] max-w-[1000px] relative transition-all duration-300 flex-shrink-0">
-          <GoldenFrame width="100%" maxWidth="100%">
-            <SlotMachine
-              ref={slotMachineRef}
-              onSpinComplete={handleSpinComplete}
-              instantSpin={instantSpin}
-              turboSpin={turboSpin}
-              winResult={winResult}
-              reelStrips={currentStrips}
-            />
-          </GoldenFrame>
-          
-          <Mascot isWinning={!!winResult && winResult.totalWin > 0} />
+        <div 
+          className="relative transition-all duration-300 flex justify-center items-center shrink min-h-0 w-full"
+          style={{ width: 'min(98%, 65vh * 1.166)', maxWidth: '1000px' }}
+        >
+          <div className="w-full relative flex items-center justify-center">
+            <GoldenFrame width="100%" maxWidth="100%">
+              <SlotMachine
+                ref={slotMachineRef}
+                onSpinComplete={handleSpinComplete}
+                instantSpin={instantSpin}
+                turboSpin={turboSpin}
+                winResult={winResult}
+                reelStrips={currentStrips}
+              />
+            </GoldenFrame>
+            <Mascot isWinning={!!winResult && winResult.totalWin > 0} />
+          </div>
         </div>
 
         {/* Control Bar */}
-        <ControlPanel
-          balance={balance}
-          currentBet={currentBet}
-          currency={currency}
-          betLevels={BET_LEVELS}
-          currentBetIndex={currentBetIndex}
-          spinning={isSpinning}
-          autoSpinEnabled={autoSpinEnabled}
-          freeSpinsRemaining={freeSpinsRemaining}
-          freeSpinsTotalWin={freeSpinsTotalWin}
-          isMuted={isMuted}
-          onToggleMute={() => setIsMuted(prev => !prev)}
-          volume={volume}
-          onVolumeChange={setVolume}
-          onSpin={() => handleSpinStart('none')}
-          onIncreaseBet={increaseBet}
-          onDecreaseBet={decreaseBet}
-          onBuyBonus={() => setBuyBonusOpen(true)}
-          onToggleAutoSpin={() =>
-            autoSpinModalOpen
-              ? setAutoSpinModalOpen(false)
-              : autoSpinEnabled
-              ? stopAutoSpin()
-              : setAutoSpinModalOpen(true)
-          }
-          onOpenPaytable={() => setPayTableOpen(true)}
-          boostActive={boostActive}
-          onToggleBoost={() => setBoostActive(prev => !prev)}
-          instantSpin={instantSpin}
-          onToggleInstantSpin={() => setInstantSpin(prev => !prev)}
-          turboSpin={turboSpin}
-          onToggleTurboSpin={() => setTurboSpin(prev => !prev)}
-        />
-
+        <div className="w-full flex-shrink-0 flex justify-center z-50">
+          <ControlPanel
+            balance={balance}
+            currentBet={currentBet}
+            currency={currency}
+            betLevels={BET_LEVELS}
+            currentBetIndex={currentBetIndex}
+            spinning={isSpinning}
+            autoSpinEnabled={autoSpinEnabled}
+            freeSpinsRemaining={freeSpinsRemaining}
+            freeSpinsTotalWin={freeSpinsTotalWin}
+            isMuted={isMuted}
+            onToggleMute={() => setIsMuted(prev => !prev)}
+            volume={volume}
+            onVolumeChange={setVolume}
+            onSpin={() => handleSpinStart('none')}
+            onIncreaseBet={increaseBet}
+            onDecreaseBet={decreaseBet}
+            onBuyBonus={() => setBuyBonusOpen(true)}
+            onToggleAutoSpin={() =>
+              autoSpinModalOpen
+                ? setAutoSpinModalOpen(false)
+                : autoSpinEnabled
+                ? stopAutoSpin()
+                : setAutoSpinModalOpen(true)
+            }
+            onOpenPaytable={() => setPayTableOpen(true)}
+            boostActive={boostActive}
+            onToggleBoost={() => setBoostActive(prev => !prev)}
+            instantSpin={instantSpin}
+            onToggleInstantSpin={() => setInstantSpin(prev => !prev)}
+            turboSpin={turboSpin}
+            onToggleTurboSpin={() => setTurboSpin(prev => !prev)}
+          />
+        </div>
       </div>
       </div>
 

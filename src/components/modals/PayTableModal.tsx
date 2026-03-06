@@ -33,39 +33,57 @@ const PayTableModal = ({ open, onClose }: PayTableModalProps) => {
 
           {/* ── SYMBOL PAYOUTS ── */}
           <section>
-            <h3 className="text-xl font-bold text-yellow-400 mb-4 border-b border-white/10 pb-2">Symbol Payouts</h3>
-            {/* Table header */}
-            <div className="grid grid-cols-5 font-bold text-yellow-300 text-sm md:text-base pb-2 mb-1 sticky top-0 bg-[#0f0f11] z-10">
-              <div className="col-span-2 pl-1">Symbol</div>
-              <div className="text-center">3×</div>
-              <div className="text-center">4×</div>
-              <div className="text-center">5×</div>
-            </div>
-            {SYMBOLS.filter(s => s.id !== 4)
-              .sort((a, b) => {
-                const maxA = Math.max(...Object.values(a.payouts || {}));
-                const maxB = Math.max(...Object.values(b.payouts || {}));
-                return maxA - maxB;
-              })
-              .map((symbol) => (
-                <div
-                  key={symbol.id}
-                  className="grid grid-cols-5 items-center bg-black/20 p-3 rounded-lg hover:bg-black/30 transition-colors mb-2"
-                >
-                  <div className="col-span-2 flex items-center gap-3">
-                    <img src={symbol.image} alt={symbol.name} className="w-12 h-12 object-contain drop-shadow" />
-                    <span className="font-semibold text-zinc-100 text-sm md:text-base">{symbol.name}</span>
+            <h3 className="text-base md:text-lg font-bold tracking-widest text-center text-[#7da2ce] mb-6">HIGH SYMBOLS</h3>
+            <div className="flex flex-wrap justify-center gap-4 md:gap-6 mb-10">
+              {SYMBOLS.filter(s => s.id !== 4 && (s.payouts?.[5] || 0) >= 20)
+                .sort((a, b) => (b.payouts?.[5] || 0) - (a.payouts?.[5] || 0))
+                .map((symbol) => (
+                  <div
+                    key={symbol.id}
+                    className="bg-gradient-to-b from-[#2a2a30] to-[#1a1a1c] border border-white/5 rounded-2xl py-5 px-4 flex flex-col shadow-2xl shrink-0 w-[140px] md:w-[150px]"
+                  >
+                    <div className="flex-1 flex items-center justify-center mb-6 min-h-[70px]">
+                      <img src={symbol.image} alt={symbol.name} className="w-16 h-16 md:w-[4.5rem] md:h-[4.5rem] object-contain drop-shadow-[0_6px_10px_rgba(0,0,0,0.8)]" />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      {[3, 4, 5].map((multiplier) => (
+                        <div key={multiplier} className="flex justify-between items-center bg-black/40 border border-white/5 rounded px-3 py-1.5 text-xs md:text-sm">
+                          <span className="text-zinc-500 font-bold">{multiplier}x</span>
+                          <span className={`font-bold ${multiplier === 5 ? 'text-yellow-500' : 'text-zinc-100'}`}>
+                            {symbol.payouts?.[multiplier as keyof typeof symbol.payouts] || 0}x
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <>
-                    {/* @ts-ignore */}
-                    <div className="text-center font-mono text-yellow-400 text-sm md:text-base">{(symbol.payouts?.[3] || 0).toFixed(2)}</div>
-                    {/* @ts-ignore */}
-                    <div className="text-center font-mono text-yellow-400 text-sm md:text-base">{(symbol.payouts?.[4] || 0).toFixed(2)}</div>
-                    {/* @ts-ignore */}
-                    <div className="text-center font-mono text-yellow-400 text-sm md:text-base">{(symbol.payouts?.[5] || 0).toFixed(2)}</div>
-                  </>
-                </div>
-              ))}
+                ))}
+            </div>
+
+            <h3 className="text-base md:text-lg font-bold tracking-widest text-center text-[#7da2ce] mb-6">LOW SYMBOLS</h3>
+            <div className="flex flex-wrap justify-center gap-4 md:gap-6">
+              {SYMBOLS.filter(s => s.id !== 4 && (s.payouts?.[5] || 0) < 20)
+                .sort((a, b) => (b.payouts?.[5] || 0) - (a.payouts?.[5] || 0))
+                .map((symbol) => (
+                  <div
+                    key={symbol.id}
+                    className="bg-gradient-to-b from-[#2a2a30] to-[#1a1a1c] border border-white/5 rounded-2xl py-5 px-4 flex flex-col shadow-2xl shrink-0 w-[140px] md:w-[150px]"
+                  >
+                    <div className="flex-1 flex items-center justify-center mb-6 min-h-[70px]">
+                      <img src={symbol.image} alt={symbol.name} className="w-16 h-16 md:w-[4.5rem] md:h-[4.5rem] object-contain drop-shadow-[0_6px_10px_rgba(0,0,0,0.8)]" />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      {[3, 4, 5].map((multiplier) => (
+                        <div key={multiplier} className="flex justify-between items-center bg-black/40 border border-white/5 rounded px-3 py-1.5 text-xs md:text-sm">
+                          <span className="text-zinc-500 font-bold">{multiplier}x</span>
+                          <span className={`font-bold ${multiplier === 5 ? 'text-yellow-500 drop-shadow-[0_0_8px_rgba(234,179,8,0.4)]' : 'text-zinc-100'}`}>
+                            {symbol.payouts?.[multiplier as keyof typeof symbol.payouts] || 0}x
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+            </div>
           </section>
 
           {/* ── FREE SPINS & SPECIALS ── */}

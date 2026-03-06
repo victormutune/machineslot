@@ -1,20 +1,20 @@
 // Symbols
-import sym7 from "./symbols/7 (1).png";
-import symA from "./symbols/A (1).png";
-import symBoot from "./symbols/boot 2.png";
-import symFlag from "./symbols/flag (1).png";
+import sym7 from "./symbols/7_1.png";
+import symA from "./symbols/A_1.png";
+import symBoot from "./symbols/boot_2.png";
+import symFlag from "./symbols/flag_1.png";
 import symFootball from "./symbols/FOOTBALL.png";
-import symJ from "./symbols/J (1).png";
+import symJ from "./symbols/J_1.png";
 import symK from "./symbols/K3.png";
-import symQ from "./symbols/Q (1).png";
-import symTrophy from "./symbols/trophy (1).png";
-import symWhistle from "./symbols/whistle (1).png";
+import symQ from "./symbols/Q_1.png";
+import symTrophy from "./symbols/trophy_1.png";
+import symWhistle from "./symbols/whistle_1.png";
 import symBonus from "./symbols/Bonus.png";
 import sym10 from "./symbols/1O.png";
 
 // Theme
 import background from "./theme/BACKGROUND.png";
-import frame from "./theme/Medieval slot machine frame design.png";
+import frame from "./theme/frame_design.png";
 import Back from "./theme/Back.png";
 import BACKG from "./theme/BACKG.png";
 import BAKI from "./theme/BAKI.png";
@@ -23,7 +23,7 @@ import stone from "./theme/stone.png";
 import bgMusic from "./mascot/lab_slots_bgm.mp3";
 import spinStartSound from "./mascot/spin_start.mp3";
 import spinStopSound from "./mascot/spin_stop.mp3";
-import bonusTriggerSound from "./mascot/bonus sound.mp3";
+import bonusTriggerSound from "./mascot/bonus_sound.mp3";
 
 // Mascot
 import mos1 from "./mascot/mos1.png";
@@ -110,7 +110,7 @@ export const SYMBOLS = [
 // OPTIMIZED: Reels 4 & 5 now have HEAVY low symbol stacks to allow 4x/5x wins
 
 const REEL_1 = [
-  6, 10, 5, 9, 6, 10, 5, 9, 6, 10, 5, 9, // 12 Lows
+  6, 1, 5, 9, 6, 10, 5, 9, 6, 10, 5, 9, // 12 Lows
   2, 6, 3, 1, 7, 5, 0, 9, 8, // Mixed
   4, 5, 9, 6, 10, 1, 2, 2, 
   9, 6, 7, 5, 3, 1, 0, 8, 

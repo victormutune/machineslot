@@ -66,7 +66,7 @@ export default function SlotControlPanel({
     <>
 
       {/* ================= CONTROL BAR (all screen sizes) ================= */}
-      <div className="flex w-full justify-center px-2 py-2 sm:p-4 fixed bottom-0 left-0 z-50">
+      <div className="flex w-full justify-center px-2 py-2 sm:p-4 z-50">
         <div className="relative flex items-center justify-center w-full max-w-3xl">
 
 
