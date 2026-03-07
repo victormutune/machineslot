@@ -20,6 +20,7 @@ import type {
   GameConfig,
   RoundData,
   Currency,
+  Balance,
 } from './stakeEngineClient';
 import { getLocaleManager } from '../locale/locale';
 
@@ -139,6 +140,45 @@ export class StakeEngineManager extends EventEmitter {
 
   // ── Initialization ─────────────────────────────────────────────────────────
 
+  private _updateBalanceFromRGS(balanceData: Balance): void {
+    const newCurrency = balanceData.currency;
+    const newAmount = fromRGSAmount(balanceData.amount);
+
+    let currencyChanged = false;
+    if (newCurrency !== this._currency) {
+      this._currency = newCurrency;
+      currencyChanged = true;
+    }
+
+    this._balance = newAmount;
+
+    if (currencyChanged) {
+      const isSocialFromURL = new URLSearchParams(window.location.search).get('social') === 'true';
+      const isConfigSocial = this._config?.jurisdiction.socialCasino ?? false;
+
+      let newMode: GameMode = this._mode; // Default to current
+
+      if (isSocialFromURL || isConfigSocial || isSocialCasinoCurrency(newCurrency)) {
+         newMode = 'social';
+      } else {
+         newMode = 'rgs';
+      }
+
+      if (this._mode !== newMode) {
+         this._mode = newMode;
+         getLocaleManager().setSocialMode(newMode === 'social');
+         this.onModeChange?.(this._mode);
+         this.emit('modeChanged', this._mode);
+         console.info(`[StakeEngine] Mode dynamically changed to: ${this._mode}`);
+      }
+      
+      this.emit('currencyChanged', this._currency);
+      console.info(`[StakeEngine] Currency dynamically changed to: ${this._currency}`);
+    }
+
+    this._emitBalanceUpdate();
+  }
+
   async initialize(): Promise<boolean> {
     const params = parseURLParams();
     const isSocialFromURL = new URLSearchParams(window.location.search).get('social') === 'true';
@@ -179,7 +219,7 @@ export class StakeEngineManager extends EventEmitter {
         }
 
         this.onConfigLoaded?.(authResponse.config);
-        this._emitBalanceUpdate();
+        this._updateBalanceFromRGS(authResponse.balance);
         this.onModeChange?.(this._mode);
         this.emit('authenticated', authResponse);
         this._initialized = true;
@@ -261,9 +301,8 @@ export class StakeEngineManager extends EventEmitter {
     if (this.isRGSMode || this.isSocialMode) {
       try {
         const response = await this.client!.play(this.currentBet, mode);
-        this._balance      = fromRGSAmount(response.balance.amount);
         this._currentRound = response.round;
-        this._emitBalanceUpdate();
+        this._updateBalanceFromRGS(response.balance);
         this.emit('playStarted', response.round);
         return { success: true, balance: this._balance, round: response.round };
       } catch (error) {
@@ -283,9 +322,8 @@ export class StakeEngineManager extends EventEmitter {
     if (this.isRGSMode || this.isSocialMode) {
       try {
         const response = await this.client!.endRound();
-        this._balance      = fromRGSAmount(response.balance.amount);
         this._currentRound = null;
-        this._emitBalanceUpdate();
+        this._updateBalanceFromRGS(response.balance);
         this.emit('roundEnded');
         return { success: true, balance: this._balance };
       } catch (error) {
@@ -331,8 +369,7 @@ export class StakeEngineManager extends EventEmitter {
     if (this.isRGSMode || this.isSocialMode) {
       try {
         const response = await this.client!.getBalance();
-        this._balance = fromRGSAmount(response.balance.amount);
-        this._emitBalanceUpdate();
+        this._updateBalanceFromRGS(response.balance);
       } catch (error) {
         console.warn('[StakeEngine] Failed to refresh balance:', error);
       }

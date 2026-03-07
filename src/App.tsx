@@ -150,6 +150,16 @@ function App() {
          }
        });
 
+       stakeManager.on('currencyChanged', (newCurrency: string) => {
+         console.info(`[Gradiator] App updated currency to ${newCurrency}`);
+         setCurrency(newCurrency);
+       });
+
+       stakeManager.on('modeChanged', (mode: string) => {
+         console.info(`[Gradiator] App updated mode to ${mode}`);
+         // The locale manager inside StakeEngineManager handles the actual 't' translation toggles.
+       });
+
        stakeManager.on('error', (err: any) => {
          console.error('StakeEngine Error:', err);
          alert(err.message || t('An error occurred connecting to RGS'));
