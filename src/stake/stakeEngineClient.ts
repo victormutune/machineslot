@@ -250,7 +250,11 @@ export class StakeEngineClient {
     rgsUrl: string,
   ) {
     this.sessionID = sessionID;
-    this.rgsUrl = rgsUrl.replace(/\/$/, '');
+    let url = rgsUrl.replace(/\/$/, '');
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'https://' + url;
+    }
+    this.rgsUrl = url;
   }
 
   /**
