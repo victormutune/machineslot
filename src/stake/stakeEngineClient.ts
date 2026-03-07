@@ -343,7 +343,11 @@ export class StakeEngineClient {
       if (amount > this._config.maxBet)  throw new StakeEngineError('ERR_VAL', 'Bet above maximum');
       if (amount % this._config.stepBet !== 0) throw new StakeEngineError('ERR_VAL', 'Bet not divisible by step');
     }
-    const response = await this.request<PlayResponse>('/wallet/play', { amount, mode });
+    const payload: Record<string, unknown> = { amount };
+    if (mode !== 'BASE' && mode !== 'base') {
+       payload.mode = mode;
+    }
+    const response = await this.request<PlayResponse>('/wallet/play', payload);
     this._balance = response.balance;
     this._currentRound = response.round;
     return response;

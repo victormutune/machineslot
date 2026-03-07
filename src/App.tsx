@@ -244,7 +244,7 @@ function App() {
     isSpinningRef.current = true;
     emitRoundActive(true); // notify stake-engine listeners
     
-    const spinMode = isFreeSpin ? 'freespin' : 'base';
+    const spinMode = isFreeSpin ? 'FREESPIN' : 'BASE';
 
     // RGS Network Play
     if (stakeManager.isRGSMode || stakeManager.isSocialMode) {
@@ -253,7 +253,8 @@ function App() {
          
          // In a real integration, the mode would match what the backend expects for feature buys
          const computedMode = featureBuy !== 'none' ? featureBuy : spinMode;
-         const playRes = await stakeManager.play(computedMode);
+         // Pass undefined to let stakeManager use default 'BASE' if computedMode is 'BASE'
+         const playRes = await stakeManager.play(computedMode === 'BASE' ? undefined : computedMode);
          
          if (!playRes.success) {
             setIsSpinning(false);

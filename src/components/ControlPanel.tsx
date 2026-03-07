@@ -137,7 +137,7 @@ export default function SlotControlPanel({
                   <div className="flex flex-col justify-center px-2 sm:px-4 min-w-[70px] sm:min-w-[110px]">
                     <span className="hidden sm:block text-[9px] text-gray-400 font-bold tracking-wider uppercase">{t('Current Bet')}</span>
                     <span className={`text-sm sm:text-lg font-bold flex items-center gap-2 ${boostActive ? 'text-red-400' : 'text-yellow-400'}`}>
-                      {formatBet(displayBet)}
+                      {formatBet(displayBet, cur)}
                     </span>
                   </div>
                   <div className="flex flex-col h-full border-l border-white/10">
