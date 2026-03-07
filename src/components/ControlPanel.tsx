@@ -1,5 +1,6 @@
 import { formatBalance, formatBet } from '../stake/stakeEngineHelpers';
 import HamburgerMenu from './ui/HamburgerMenu';
+import { t } from '../locale/locale';
 
 interface ControlPanelProps {
   balance: number;
@@ -11,10 +12,10 @@ interface ControlPanelProps {
   autoSpinEnabled: boolean;
   freeSpinsRemaining: number;
   freeSpinsTotalWin?: number;
-  isMuted: boolean;
-  onToggleMute: () => void;
-  volume: number;
-  onVolumeChange: (vol: number) => void;
+  isMusicMuted: boolean;
+  onToggleMusic: () => void;
+  isSoundMuted: boolean;
+  onToggleSound: () => void;
   boostActive: boolean;
   onToggleBoost: () => void;
   instantSpin: boolean;
@@ -39,10 +40,10 @@ export default function SlotControlPanel({
   autoSpinEnabled,
   freeSpinsRemaining,
   freeSpinsTotalWin = 0,
-  isMuted,
-  onToggleMute,
-  volume,
-  onVolumeChange,
+  isMusicMuted,
+  onToggleMusic,
+  isSoundMuted,
+  onToggleSound,
   boostActive,
   onToggleBoost,
   instantSpin,
@@ -87,7 +88,7 @@ export default function SlotControlPanel({
                 className="w-10 h-10 sm:w-16 sm:h-16 rounded-full bg-[#fbbf24] border-2 border-[#f59e0b] shadow-lg flex flex-col items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer disabled:opacity-50"
               >
                 <span className="text-black font-extrabold text-[10px] leading-tight text-center">
-                  BUY<br />BONUS
+                  {t('BUY')}<br />{t('BONUS')}
                 </span>
               </button>
             )}
@@ -103,10 +104,10 @@ export default function SlotControlPanel({
               <div className="flex items-center gap-2 sm:gap-6 pl-4 sm:pl-8">
                 <HamburgerMenu
                   onOpenPaytable={onOpenPaytable}
-                  isMuted={isMuted}
-                  onToggleMute={onToggleMute}
-                  volume={volume}
-                  onVolumeChange={onVolumeChange}
+                  isMusicMuted={isMusicMuted}
+                  onToggleMusic={onToggleMusic}
+                  isSoundMuted={isSoundMuted}
+                  onToggleSound={onToggleSound}
                   instantSpin={instantSpin}
                   onToggleInstantSpin={onToggleInstantSpin}
                   turboSpin={turboSpin}
@@ -114,7 +115,7 @@ export default function SlotControlPanel({
                 />
 
                 <div className="flex flex-col">
-                  <span className="hidden sm:block text-[10px] text-gray-400 font-bold tracking-wider uppercase">Balance</span>
+                  <span className="hidden sm:block text-[10px] text-gray-400 font-bold tracking-wider uppercase">{t('Balance')}</span>
                   <span className="text-sm sm:text-xl font-bold text-white tracking-wide">{formatBalance(balance, cur)}</span>
                 </div>
               </div>
@@ -122,7 +123,7 @@ export default function SlotControlPanel({
               <div className="flex-1 flex justify-center items-center">
                 {freeSpinsRemaining > 0 && freeSpinsTotalWin > 0 && (
                   <div className="flex flex-col items-center justify-center px-6 py-1 bg-yellow-400/10 border border-yellow-400/30 rounded-full animate-pulse shadow-[0_0_15px_rgba(250,204,21,0.2)]">
-                    <span className="text-[10px] text-yellow-500 font-extrabold tracking-widest uppercase mb-0.5">Free Spins Win</span>
+                    <span className="text-[10px] text-yellow-500 font-extrabold tracking-widest uppercase mb-0.5">{t('Free Spins Win')}</span>
                     <span className="text-xl font-black text-yellow-300 drop-shadow-md leading-none">{formatBalance(freeSpinsTotalWin, cur)}</span>
                   </div>
                 )}
@@ -134,7 +135,7 @@ export default function SlotControlPanel({
                 {/* Bet Display + Up/Down */}
                 <div className="flex items-center bg-[#0f1012] rounded-md h-9 sm:h-12 border border-white/5 relative mr-10 sm:mr-12 overflow-hidden">
                   <div className="flex flex-col justify-center px-2 sm:px-4 min-w-[70px] sm:min-w-[110px]">
-                    <span className="hidden sm:block text-[9px] text-gray-400 font-bold tracking-wider uppercase">Current Bet</span>
+                    <span className="hidden sm:block text-[9px] text-gray-400 font-bold tracking-wider uppercase">{t('Current Bet')}</span>
                     <span className={`text-sm sm:text-lg font-bold flex items-center gap-2 ${boostActive ? 'text-red-400' : 'text-yellow-400'}`}>
                       {formatBet(displayBet)}
                     </span>

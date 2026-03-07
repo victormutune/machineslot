@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { formatBalance } from '../../stake/stakeEngineHelpers';
+import { t } from '../../locale/locale';
 
 type BonusId = 'goal_rush' | 'counter_attack';
 
@@ -110,7 +111,7 @@ export default function BuyBonusModal({
       <div className="relative w-[92%] max-w-[720px] rounded-[18px] bg-gradient-to-b from-[#131316] to-[#0e0e10] shadow-[0_30px_80px_rgba(0,0,0,0.75)] ring-1 ring-[#daa520]/35">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 rounded-t-[18px] bg-[#c6a31f]/85">
-          <div className="text-[#3a2b05] font-extrabold text-lg">Buy Bonus</div>
+          <div className="text-[#3a2b05] font-extrabold text-lg">{t('Buy Bonus')}</div>
           <button
             type="button"
             onClick={handleClose}
@@ -124,9 +125,9 @@ export default function BuyBonusModal({
         <div className="px-5 py-5">
           {selectedChoice ? (
             <div className="flex flex-col items-center justify-center py-8">
-              <div className="text-2xl font-extrabold text-[#efece1] mb-2">{selectedChoice.title}</div>
+              <div className="text-2xl font-extrabold text-[#efece1] mb-2">{t(selectedChoice.title)}</div>
               <div className="text-[#c9b06a] text-center mb-6 max-w-[400px]">
-                Are you sure you want to purchase <strong className="text-white">{selectedChoice.title}</strong> for{' '}
+                {t('Are you sure you want to')} {t('purchase')} <strong className="text-white">{t(selectedChoice.title)}</strong> {t('for')}{' '}
                 <span className="text-[#f2d27a] font-bold tabular-nums">
                   {money(currentBet * selectedChoice.costMultiplier)}
                 </span>
@@ -178,7 +179,7 @@ export default function BuyBonusModal({
               <div className="rounded-[14px] bg-[#151518]/70 ring-1 ring-white/10 px-4 py-4">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="text-[#c9b06a] font-bold">Select Bet Amount</div>
+                <div className="text-[#c9b06a] font-bold">{t('Select Bet Amount')}</div>
               </div>
 
               <div className="flex items-center gap-2">
@@ -265,7 +266,7 @@ export default function BuyBonusModal({
                     </div>
                   </div>
                   <div className="mt-2 text-xs text-white/50">
-                    {isBoostCard ? '2× Bet per spin' : `${c.costMultiplier}x Bet`}
+                    {isBoostCard ? `2× ${t('Bet')} per spin` : `${c.costMultiplier}x ${t('Bet')}`}
                   </div>
                 </button>
               );
@@ -273,7 +274,7 @@ export default function BuyBonusModal({
           </div>
 
           <div className="mt-6 text-center text-sm text-[#c9b06a]">
-            Your Balance: <span className="text-[#efece1] font-bold tabular-nums">{money(balance)}</span>
+            {t('Your Balance')}: <span className="text-[#efece1] font-bold tabular-nums">{money(balance)}</span>
           </div>
             </>
           )}

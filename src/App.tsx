@@ -14,6 +14,7 @@ import {
   emitRoundActive,
 } from './stake/stakeEngineHelpers';
 import { getStakeEngineManager } from './stake/stakeEngineManager';
+import { t } from './locale/locale';
 
 // ── Bet levels (display dollars) ──────────────────────────────────────────────
 const BET_LEVELS = [1.00, 2.00, 5.00, 10.00, 20.00, 50.00, 100.00,200.00,500.00,1000.00];
@@ -41,7 +42,7 @@ function App() {
   const [autoSpinEnabled, setAutoSpinEnabled] = useState(false);
   const [, setAutoSpinRemaining] = useState<number | null>(null);
   const [autoSpinModalOpen, setAutoSpinModalOpen] = useState(false);
-  const [_statusMessage, setStatusMessage] = useState<string>('GRADIATOR');
+  const [_statusMessage, setStatusMessage] = useState<string>('Le baller');
   const [payTableOpen, setPayTableOpen] = useState(false);
   const [boostActive, setBoostActive] = useState(false);
   const [instantSpin, setInstantSpin] = useState(false);
@@ -50,8 +51,8 @@ function App() {
   const showBonusOverlayRef = useRef(false);
   
   // Audio State
-  const [isMuted, setIsMuted] = useState(false);
-  const [volume, setVolume] = useState(1); // 0.0 to 1.0
+  const [isMusicMuted, setIsMusicMuted] = useState(false);
+  const [isSoundMuted, setIsSoundMuted] = useState(false);
 
   // Currency from RGS (defaults to USD in demo mode)
   const [currency, setCurrency] = useState<string>('USD');
@@ -103,18 +104,18 @@ function App() {
   // Sync mute state and volume to audio elements
   useEffect(() => {
     if (bgMusicRef.current) {
-      bgMusicRef.current.muted = isMuted;
-      bgMusicRef.current.volume = 0.3 * volume;
+      bgMusicRef.current.muted = isMusicMuted;
+      bgMusicRef.current.volume = 0.3; // Lower volume for BGM
     }
     if (spinStartAudioRef.current) {
-      spinStartAudioRef.current.muted = isMuted;
-      spinStartAudioRef.current.volume = 0.7 * volume;
+      spinStartAudioRef.current.muted = isSoundMuted;
+      spinStartAudioRef.current.volume = 0.7;
     }
     if (spinStopAudioRef.current) {
-      spinStopAudioRef.current.muted = isMuted;
-      spinStopAudioRef.current.volume = 0.7 * volume;
+      spinStopAudioRef.current.muted = isSoundMuted;
+      spinStopAudioRef.current.volume = 0.7;
     }
-  }, [isMuted, volume]);
+  }, [isMusicMuted, isSoundMuted]);
 
   const initAudio = useCallback(() => {
     if (!audioInitializedRef.current && bgMusicRef.current) {
@@ -151,7 +152,7 @@ function App() {
 
        stakeManager.on('error', (err: any) => {
          console.error('StakeEngine Error:', err);
-         alert(err.message || 'An error occurred connecting to RGS');
+         alert(err.message || t('An error occurred connecting to RGS'));
        });
     };
     initManager();
@@ -200,7 +201,7 @@ function App() {
       setFreeSpinsTotalWin(0); // Reset total win on new base spin or feature buy initiation
     }
     setLastFreeSpinsWon(0);
-    setStatusMessage('Good luck!');
+    setStatusMessage(t('Good luck!'));
 
     const activeStrips = isFreeSpin ? BONUS_REEL_STRIPS : REEL_STRIPS;
     setCurrentStrips(activeStrips);
@@ -223,7 +224,7 @@ function App() {
     const effectiveCost = currentBet * effectiveBetMultiplier;
 
     if (!isFreeSpin && balance < effectiveCost) {
-      alert('Insufficient Funds!');
+      alert(t('Insufficient Funds!'));
       stopAutoSpin();
       return;
     }
@@ -239,7 +240,10 @@ function App() {
     if (stakeManager.isRGSMode || stakeManager.isSocialMode) {
       try {
          // StakeEngine expects you to play using internal base bet
-         const playRes = await stakeManager.play(spinMode);
+         
+         // In a real integration, the mode would match what the backend expects for feature buys
+         const computedMode = featureBuy !== 'none' ? featureBuy : spinMode;
+         const playRes = await stakeManager.play(computedMode);
          
          if (!playRes.success) {
             setIsSpinning(false);
@@ -275,18 +279,18 @@ function App() {
          pendingWinResultRef.current = mathResult;
          pendingFreeSpinsRef.current = mathResult.freeSpins || 0;
          
-         if (!isFreeSpin) {
-             setBalance(playRes.balance - effectiveCost + currentBet); // Adjust manager base deduction
-         } else {
+         // DO NOT manually adjust balance for cost/bet in RGS mode - server playRes.balance is the source of truth for post-debit balance.
+         setBalance(playRes.balance); 
+
+         if (isFreeSpin) {
              setFreeSpinsRemaining(prev => prev - 1);
          }
          
          if (slotMachineRef.current) {
             slotMachineRef.current.spin(finalStops, spinCount);
          }
-
-         // Fire and forget end round (simulated RGS completion)
-         await stakeManager.endRound();
+         
+         // The endRound call is removed from here: it must happen in handleSpinComplete below
       } catch (err) {
          console.warn("RGS spin error, falling back visually", err);
          setIsSpinning(false);
@@ -317,13 +321,30 @@ function App() {
   }, [handleSpinStart]);
 
   // ── Spin complete ─────────────────────────────────────────────────────────
-  const handleSpinComplete = useCallback(() => {
+  const handleSpinComplete = useCallback(async () => {
     setIsSpinning(false);
     isSpinningRef.current = false;
     emitRoundActive(false); // round finished — re-enable UI via event
     const winAmount = pendingWinRef.current;
     const wonFreeSpins = pendingFreeSpinsRef.current;
     const result = pendingWinResultRef.current;
+
+    // RGS End Round (simulating network complete per API Basic Flow specification)
+    if (stakeManager.isRGSMode || stakeManager.isSocialMode) {
+      if (stakeManager.currentRound) {
+        try {
+          // If the math calculated winnings, save them so RGS logs it
+          if (winAmount > 0) {
+            await stakeManager.saveEvent(JSON.stringify({ state: 'won', winAmount }));
+          }
+          await stakeManager.endRound();
+          // Update the balance precisely to what the server reported post-round if RGS exists
+          setBalance(stakeManager.balance); 
+        } catch (e) {
+          console.error("Failed to cleanly end round on RGS", e);
+        }
+      }
+    }
 
     if (winAmount > 0 || wonFreeSpins > 0) {
       setWinResult(result);
@@ -333,11 +354,11 @@ function App() {
       setLastWin(winAmount);
       
       // In Demo we manually add the winnings to the balance.
-      // If RGS, normally RGS adds this, but since we are stubbing the native logic inside 'play', we must add locally.
+      // In RGS, the endRound naturally updates stakeManager.balance so we rely on that.
       if (!stakeManager.isRGSMode && !stakeManager.isSocialMode) {
           stakeManager.addWinnings(winAmount);
+          setBalance(prev => prev + winAmount);
       }
-      setBalance(prev => prev + winAmount);
       
       if (freeSpinsRemaining > 0 || wonFreeSpins > 0) {
         setFreeSpinsTotalWin(prev => prev + winAmount);
@@ -351,8 +372,8 @@ function App() {
 
     if (wonFreeSpins > 0) {
       const parts: string[] = [];
-      if (winAmount > 0) parts.push(`You have won $${winAmount.toLocaleString('en-US')}`);
-      if (wonFreeSpins > 0) parts.push(`You received ${wonFreeSpins} free spins`);
+      if (winAmount > 0) parts.push(`${t('You have won')} $${winAmount.toLocaleString('en-US')}`);
+      if (wonFreeSpins > 0) parts.push(`${t('You received')} ${wonFreeSpins} ${t('free spins')}`);
       setStatusMessage(parts.join(' • '));
 
       // Delay the overlay so the football → bonus scatter image swap
@@ -362,7 +383,7 @@ function App() {
         showBonusOverlayRef.current = true;
       }, 1800);
     } else {
-      setStatusMessage('GRADIATOR');
+      setStatusMessage('Le baller');
     }
 
     // Auto-spin continuation
@@ -436,7 +457,7 @@ function App() {
         {/* Slot Machine Board */}
         <div 
           className="relative transition-all duration-300 flex justify-center items-center shrink min-h-0 w-full"
-          style={{ width: 'min(98%, 65vh * 1.166)', maxWidth: '1000px' }}
+          style={{ width: 'min(98%, 70vh * 1.166)', maxWidth: '1000px' }}
         >
           <div className="w-full relative flex items-center justify-center">
             <GoldenFrame width="100%" maxWidth="100%">
@@ -465,10 +486,10 @@ function App() {
             autoSpinEnabled={autoSpinEnabled}
             freeSpinsRemaining={freeSpinsRemaining}
             freeSpinsTotalWin={freeSpinsTotalWin}
-            isMuted={isMuted}
-            onToggleMute={() => setIsMuted(prev => !prev)}
-            volume={volume}
-            onVolumeChange={setVolume}
+            isMusicMuted={isMusicMuted}
+            onToggleMusic={() => setIsMusicMuted(prev => !prev)}
+            isSoundMuted={isSoundMuted}
+            onToggleSound={() => setIsSoundMuted(prev => !prev)}
             onSpin={() => handleSpinStart('none')}
             onIncreaseBet={increaseBet}
             onDecreaseBet={decreaseBet}
@@ -484,9 +505,19 @@ function App() {
             boostActive={boostActive}
             onToggleBoost={() => setBoostActive(prev => !prev)}
             instantSpin={instantSpin}
-            onToggleInstantSpin={() => setInstantSpin(prev => !prev)}
+            onToggleInstantSpin={() => {
+              setInstantSpin(prev => {
+                if (!prev) setTurboSpin(false); // Turn off Turbo if turning on Instant
+                return !prev;
+              });
+            }}
             turboSpin={turboSpin}
-            onToggleTurboSpin={() => setTurboSpin(prev => !prev)}
+            onToggleTurboSpin={() => {
+              setTurboSpin(prev => {
+                if (!prev) setInstantSpin(false); // Turn off Instant if turning on Turbo
+                return !prev;
+              });
+            }}
           />
         </div>
       </div>
@@ -509,7 +540,7 @@ function App() {
         onBuy={(choice: BuyBonusChoice) => {
           const cost = currentBet * choice.costMultiplier;
           if (isSpinning || freeSpinsRemaining > 0 || balance < cost) {
-            if (balance < cost) alert('Insufficient Funds!');
+            if (balance < cost) alert(t('Insufficient Funds!'));
             return;
           }
 

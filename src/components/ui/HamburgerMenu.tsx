@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
+import { t } from '../../locale/locale';
 
 interface HamburgerMenuProps {
   onOpenPaytable: () => void;
-  isMuted: boolean;
-  onToggleMute: () => void;
-  volume: number;
-  onVolumeChange: (vol: number) => void;
+  isMusicMuted: boolean;
+  onToggleMusic: () => void;
+  isSoundMuted: boolean;
+  onToggleSound: () => void;
   instantSpin: boolean;
   onToggleInstantSpin: () => void;
   turboSpin: boolean;
@@ -15,10 +16,10 @@ interface HamburgerMenuProps {
 
 export default function HamburgerMenu({
   onOpenPaytable,
-  isMuted,
-  onToggleMute,
-  volume,
-  onVolumeChange,
+  isMusicMuted,
+  onToggleMusic,
+  isSoundMuted,
+  onToggleSound,
   instantSpin,
   onToggleInstantSpin,
   turboSpin,
@@ -70,7 +71,7 @@ export default function HamburgerMenu({
             <div className="w-8 h-8 rounded-full border border-white/20 bg-black/40 flex items-center justify-center italic font-serif">
               i
             </div>
-            <span className="font-bold tracking-wider">Paytable</span>
+            <span className="font-bold tracking-wider">{t('Paytable')}</span>
           </button>
 
           {/* Turbo Boost */}
@@ -79,7 +80,7 @@ export default function HamburgerMenu({
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
               </svg>
-              <span className="font-bold tracking-wider">Turbo Boost</span>
+              <span className="font-bold tracking-wider">{t('Turbo Boost')}</span>
             </div>
             <button
               onClick={onToggleTurboSpin}
@@ -96,7 +97,7 @@ export default function HamburgerMenu({
                 <polygon points="5 3 19 12 5 21 5 3"></polygon>
                 <line x1="19" y1="3" x2="19" y2="21"></line>
               </svg>
-              <span className="font-bold tracking-wider">Instant Spin</span>
+              <span className="font-bold tracking-wider">{t('Instant Spin')}</span>
             </div>
             <button
               onClick={onToggleInstantSpin}
@@ -106,38 +107,50 @@ export default function HamburgerMenu({
             </button>
           </div>
 
-          {/* Sound Control */}
-          <div className="flex flex-col gap-3">
+          {/* Music Control */}
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 text-white">
-              <button onClick={onToggleMute} className="hover:text-yellow-400 transition focus:outline-none">
-                {isMuted || volume === 0 ? (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
-                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                    <line x1="23" y1="9" x2="17" y2="15"></line>
-                    <line x1="17" y1="9" x2="23" y2="15"></line>
-                  </svg>
-                ) : (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
-                  </svg>
-                )}
-              </button>
-              <span className="font-bold tracking-wider justify-self-start">Sound</span>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                 <path d="M9 18V5l12-2v13"></path>
+                 <circle cx="6" cy="18" r="3"></circle>
+                 <circle cx="18" cy="16" r="3"></circle>
+              </svg>
+              <span className="font-bold tracking-wider">{t('Music')}</span>
             </div>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              value={isMuted ? 0 : volume}
-              onChange={(e) => {
-                if (isMuted) onToggleMute();
-                onVolumeChange(parseFloat(e.target.value));
-              }}
-              className="w-full accent-yellow-400"
-            />
+            <button
+              onClick={onToggleMusic}
+              className={`w-12 h-6 rounded-full p-1 transition-colors ${!isMusicMuted ? 'bg-yellow-400' : 'bg-gray-600'}`}
+            >
+              <div className={`w-4 h-4 rounded-full bg-white transform transition-transform ${!isMusicMuted ? 'translate-x-6' : 'translate-x-0'}`} />
+            </button>
+          </div>
+
+          {/* Sound Control */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 text-white">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                 {isSoundMuted ? (
+                   <>
+                     <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                     <line x1="23" y1="9" x2="17" y2="15"></line>
+                     <line x1="17" y1="9" x2="23" y2="15"></line>
+                   </>
+                 ) : (
+                   <>
+                     <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                     <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                     <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                   </>
+                 )}
+              </svg>
+              <span className="font-bold tracking-wider">{t('Sound')}</span>
+            </div>
+            <button
+              onClick={onToggleSound}
+              className={`w-12 h-6 rounded-full p-1 transition-colors ${!isSoundMuted ? 'bg-yellow-400' : 'bg-gray-600'}`}
+            >
+              <div className={`w-4 h-4 rounded-full bg-white transform transition-transform ${!isSoundMuted ? 'translate-x-6' : 'translate-x-0'}`} />
+            </button>
           </div>
 
         </div>
