@@ -7,8 +7,9 @@ interface BonusTriggerOverlayProps {
 }
 
 const BonusTriggerOverlay: React.FC<BonusTriggerOverlayProps> = ({ freeSpinsWon, onAnimationComplete }) => {
-  const [phase, setPhase] = useState<'hidden' | 'enter' | 'show'>('hidden');
+  const [phase, setPhase] = useState<'hidden' | 'video' | 'enter' | 'show'>('hidden');
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const hasCompleted = useRef(false);
 
   useEffect(() => {
@@ -19,22 +20,25 @@ const BonusTriggerOverlay: React.FC<BonusTriggerOverlayProps> = ({ freeSpinsWon,
 
     if (freeSpinsWon > 0) {
       hasCompleted.current = false;
+      
+      // Start by playing the transition video
+      setPhase('video');
 
-      // Play Sound
-      if (audioRef.current) {
-        audioRef.current.currentTime = 0;
-        audioRef.current.play().catch(e => console.error('Audio play failed:', e));
-      }
-
-      // Slide in
-      setPhase('enter');
-      const showTimer = setTimeout(() => setPhase('show'), 80);
-
-      return () => {
-        clearTimeout(showTimer);
-      };
+      // (Sound will play after video completes, or you can play it simultaneously)
     }
   }, [freeSpinsWon]);
+
+  const handleVideoEnded = () => {
+    // Play Sound
+    if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(e => console.error('Audio play failed:', e));
+    }
+
+    // Slide in
+    setPhase('enter');
+    setTimeout(() => setPhase('show'), 80);
+  };
 
   const handleContinue = () => {
     if (hasCompleted.current) return;
@@ -44,6 +48,22 @@ const BonusTriggerOverlay: React.FC<BonusTriggerOverlayProps> = ({ freeSpinsWon,
   };
 
   if (phase === 'hidden' || freeSpinsWon === 0) return null;
+
+  if (phase === 'video') {
+    return (
+      <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black pointer-events-auto">
+        <video 
+           ref={videoRef}
+           src={ASSETS.video.afterBonus} 
+           autoPlay 
+           playsInline
+           onEnded={handleVideoEnded}
+           onError={handleVideoEnded} // Fallback if video fails to load/play
+           className="w-full h-full object-cover"
+        />
+      </div>
+    );
+  }
 
   return (
     <div

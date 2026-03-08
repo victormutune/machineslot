@@ -94,7 +94,7 @@ const calculateOnce = (
 
   // Scatter symbol
   const SCATTER = SYMBOLS.find(s =>
-    s.name.toLowerCase().includes('football')
+    s.name.toLowerCase().includes('bonus')
   );
   const SCATTER_ID = SCATTER?.id ?? -1;
 
@@ -112,17 +112,14 @@ const calculateOnce = (
       }
     }
 
-    if (scatterCount >= 3) {
+    if (scatterCount >= 4) {
       scatterPositions.forEach(pos => {
         allWinningPositions.add(`${pos.col},${pos.row}`);
       });
 
       const scatterWin = 0;
 
-      freeSpins =
-        scatterCount === 3 ? 8 :
-        scatterCount === 4 ? 10 :
-        12; // 5+ scatters = 12 spins
+      freeSpins = scatterCount === 4 ? 8 : 12; // 5+ scatters = 12 spins
 
       totalWin += scatterWin;
 
@@ -139,30 +136,51 @@ const calculateOnce = (
 
   /* ===== PAYLINES ===== */
 
+  const WILD_ID = 8;
+  const WILD_MULTIPLIERS = [2, 3, 5];
+
   PAYLINES.forEach(line => {
     const symbols = line.map((row, col) => grid[col][row]);
-    const first = symbols[0];
-
-    if (first === SCATTER_ID) return;
-
-    let match = 1;
-    for (let i = 1; i < COLS; i++) {
-      if (symbols[i] === first) match++;
-      else break;
+    
+    let firstNonWildIndex = 0;
+    while (firstNonWildIndex < COLS && symbols[firstNonWildIndex] === WILD_ID) {
+      firstNonWildIndex++;
     }
 
-    // Extend symbol payouts to cover 6-of-a-kind if not defined
-    // (uses 5-match payout as fallback)
+    // Treat all-wilds line as symbol ID 9 (Football - highest payout)
+    const targetSymbolId = firstNonWildIndex === COLS ? 9 : symbols[firstNonWildIndex];
+
+    if (targetSymbolId === SCATTER_ID) return;
+
+    let match = 0;
+    let hasWild = false;
+    for (let i = 0; i < COLS; i++) {
+      // Only consider regular symbols (1-13, excluding 4 and 8)
+      if (symbols[i] > 13 || symbols[i] === SCATTER_ID || symbols[i] === WILD_ID) break;
+      if (targetSymbolId > 13 || targetSymbolId === SCATTER_ID || targetSymbolId === WILD_ID) continue;
+      if (symbols[i] === targetSymbolId || symbols[i] === WILD_ID) {
+        match++;
+        if (symbols[i] === WILD_ID) hasWild = true;
+      } else {
+        break;
+      }
+    }
 
     if (match < 3) return;
 
-    const symbol = SYMBOLS.find(s => s.id === first);
+    const symbol = SYMBOLS.find(s => s.id === targetSymbolId);
     if (!symbol) return;
 
-    // @ts-ignore — fall back to 5x payout * 2 for 6-of-a-kind when no explicit entry
+    let multiplier = 1;
+    if (hasWild) {
+      // Pick a random multiplier if wild is used in the line
+      multiplier = WILD_MULTIPLIERS[Math.floor(Math.random() * WILD_MULTIPLIERS.length)];
+    }
+
+    // @ts-ignore 
     const payouts: Record<number, number> = (symbol as any).payouts ?? {};
-    const payout = payouts[match] ?? (match === 6 ? (payouts[5] ?? 0) * 2 : 0);
-    const winAmount = (payout || 0) * bet;
+    const payout = payouts[match] ?? 0; // We have explicit 6x payouts defined now
+    const winAmount = (payout || 0) * bet * multiplier;
     totalWin += winAmount;
 
     const path = line.slice(0, match).map((row, col) => ({ col, row }));
@@ -217,13 +235,13 @@ export const calculateWin = (
   
   // Scatter symbol
   const SCATTER = SYMBOLS.find(s =>
-    s.name.toLowerCase().includes('football')
+    s.name.toLowerCase().includes('bonus')
   );
   const SCATTER_ID = SCATTER?.id ?? -1;
 
-  // If Free Kick or Extra Time, force 3 or 5 scatters respectively
-  if (featureBuy === 'free_kick' || featureBuy === 'extra_time') {
-    const requiredScatters = featureBuy === 'extra_time' ? 5 : 3;
+  // If Power Rush or Goal Rush, force 4 or 5 scatters respectively
+  if (featureBuy === 'power_rush' || featureBuy === 'goal_rush') {
+    const requiredScatters = featureBuy === 'goal_rush' ? 5 : 4;
     let placedScatters = 0;
     
     // Pick requiredScatters number of specific random columns to place scatters on

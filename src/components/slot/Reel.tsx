@@ -118,8 +118,11 @@ const Reel = forwardRef<ReelHandle, ReelProps>(({
               rowIndex = i - startVisibleIndex;
               if (winningRows && winningRows[rowIndex]) {
                 isWinner = true;
-              } else if (hasAnyWin) {
-                // Only dim non-winners while the sweep is active
+              } 
+              
+              if (bonusTriggered) {
+                shouldDim = symbol.id !== 4;
+              } else if (hasAnyWin && !isWinner) {
                 shouldDim = sweepActive;
               }
             }

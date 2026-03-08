@@ -28,6 +28,7 @@ interface ControlPanelProps {
   onBuyBonus: () => void;
   onToggleAutoSpin: () => void;
   onOpenPaytable: () => void;
+  onOpenBetSelection: () => void;
 }
 
 export default function SlotControlPanel({
@@ -56,6 +57,7 @@ export default function SlotControlPanel({
   onBuyBonus,
   onToggleAutoSpin,
   onOpenPaytable,
+  onOpenBetSelection,
 }: ControlPanelProps) {
   const atMin = currentBetIndex === 0;
   const atMax = currentBetIndex === betLevels.length - 1;
@@ -133,34 +135,34 @@ export default function SlotControlPanel({
               <div className="flex items-center gap-4 pr-18">
 
                 {/* Bet Display + Up/Down */}
-                <div className="flex items-center bg-[#0f1012] rounded-md h-9 sm:h-12 border border-white/5 relative mr-10 sm:mr-12 overflow-hidden">
-                  <div className="flex flex-col justify-center px-2 sm:px-4 min-w-[70px] sm:min-w-[110px]">
-                    <span className="hidden sm:block text-[9px] text-gray-400 font-bold tracking-wider uppercase">{t('Current Bet')}</span>
-                    <span className={`text-sm sm:text-lg font-bold flex items-center gap-2 ${boostActive ? 'text-red-400' : 'text-yellow-400'}`}>
+                <div className="flex items-center gap-2 sm:gap-3 mr-10 sm:mr-12">
+                  <div 
+                    className="flex flex-col items-end justify-center cursor-pointer hover:opacity-80 transition-opacity active:scale-95"
+                    onClick={onOpenBetSelection}
+                    role="button"
+                    title="Select Bet Level"
+                  >
+                    <span className="text-[8px] sm:text-[12px] text-yellow-500 font-extrabold tracking-widest leading-none mb-1">{t('BET')}</span>
+                    <span className={`text-xl sm:text-xl font-black ${boostActive ? 'text-red-400' : 'text-white'} leading-none`}>
                       {formatBet(displayBet, cur)}
                     </span>
                   </div>
-                  <div className="flex flex-col h-full border-l border-white/10">
+                  <div className="flex flex-col gap-1 sm:gap-1.5">
                     <button
                       onClick={onIncreaseBet}
                       disabled={spinning || atMax}
-                      className="flex-1 px-2 hover:bg-white/10 active:bg-white/20 transition flex items-center justify-center disabled:opacity-40"
+                      className="w-6 h-6 sm:w-6 sm:h-6 rounded-full border-2 border-white hover:bg-white/20 active:bg-white/30 transition flex items-center justify-center disabled:opacity-40"
                     >
-                      <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M5 0L9.33013 5.25H0.669873L5 0Z" fill="white" /></svg>
+                      <span className="text-white font-black text-sm sm:text-lg leading-none mt-[1px]">+</span>
                     </button>
                     <button
                       onClick={onDecreaseBet}
                       disabled={spinning || atMin}
-                      className="flex-1 px-2 hover:bg-white/10 active:bg-white/20 transition flex items-center justify-center border-t border-white/10 disabled:opacity-40"
+                      className="w-6 h-6 sm:w-6   sm:h-6 rounded-full border-2 border-white hover:bg-white/20 active:bg-white/30 transition flex items-center justify-center disabled:opacity-40"
                     >
-                      <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M5 6L0.669873 0.75L9.33013 0.75L5 6Z" fill="white" /></svg>
+                      <span className="text-white font-black text-sm sm:text-lg leading-none mb-[1px]">-</span>
                     </button>
                   </div>
-                  {/* Progress bar shows bet position */}
-                  <div
-                    className="absolute bottom-0 left-0 h-[2px] bg-yellow-400 transition-all"
-                    style={{ width: `${((currentBetIndex) / (betLevels.length - 1)) * 100}%` }}
-                  />
                 </div>
 
                 {/* Spin + AutoSpin */}

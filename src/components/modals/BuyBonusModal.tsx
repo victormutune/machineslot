@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { formatBalance } from '../../stake/stakeEngineHelpers';
 import { t } from '../../locale/locale';
 
-type BonusId = 'goal_rush' | 'counter_attack';
+type BonusId = 'goal_rush' | 'power_rush' | 'bonus_boost';
 
 export type BuyBonusChoice = {
   id: BonusId;
@@ -69,8 +69,8 @@ export default function BuyBonusModal({
         accent: 'blue',
       },
       {
-        id: 'free_kick' as any,
-        title: 'Free Kick',
+        id: 'power_rush' as any,
+        title: 'Power Rush',
         subtitle: 'Bonus Buy with 8 Free Spins',
         freeSpins: 8,
         costMultiplier: 100,
@@ -78,8 +78,8 @@ export default function BuyBonusModal({
         accent: 'green',
       },
       {
-        id: 'extra_time' as any,
-        title: 'Extra Time',
+        id: 'goal_rush' as any,
+        title: 'Goal Rush',
         subtitle: 'Bonus Buy with 12 Free Spins',
         freeSpins: 12,
         costMultiplier: 300,

@@ -7,6 +7,7 @@ import Mascot from './components/ui/Mascot';
 import BuyBonusModal, { type BuyBonusChoice } from './components/modals/BuyBonusModal';
 import AutoSpinModal from './components/modals/AutoSpinModal';
 import PayTableModal from './components/modals/PayTableModal';
+import BetSelectionModal from './components/modals/BetSelectionModal';
 import BonusTriggerOverlay from './components/ui/BonusTriggerOverlay';
 import ClockDisplay from './components/ui/ClockDisplay';
 import { calculateWin, type WinResult } from './slot/winLogic';
@@ -44,6 +45,7 @@ function App() {
   const [autoSpinModalOpen, setAutoSpinModalOpen] = useState(false);
   const [_statusMessage, setStatusMessage] = useState<string>('Le baller');
   const [payTableOpen, setPayTableOpen] = useState(false);
+  const [betSelectionOpen, setBetSelectionOpen] = useState(false);
   const [boostActive, setBoostActive] = useState(false);
   const [instantSpin, setInstantSpin] = useState(false);
   const [turboSpin, setTurboSpin] = useState(false);
@@ -220,9 +222,9 @@ function App() {
     let effectiveBetMultiplier = 1;
     if (isFreeSpin) {
       effectiveBetMultiplier = bonusStartBetMultiplierRef.current;
-    } else if (featureBuy === 'free_kick') {
+    } else if (featureBuy === 'power_rush') {
       effectiveBetMultiplier = 100;
-    } else if (featureBuy === 'extra_time') {
+    } else if (featureBuy === 'goal_rush') {
       effectiveBetMultiplier = 300;
     } else if (featureBuy === 'bonus_boost') {
       effectiveBetMultiplier = 2; // One-time activation spin cost
@@ -513,6 +515,7 @@ function App() {
                 : setAutoSpinModalOpen(true)
             }
             onOpenPaytable={() => setPayTableOpen(true)}
+            onOpenBetSelection={() => setBetSelectionOpen(true)}
             boostActive={boostActive}
             onToggleBoost={() => setBoostActive(prev => !prev)}
             instantSpin={instantSpin}
@@ -581,6 +584,17 @@ function App() {
       <PayTableModal
         open={payTableOpen}
         onClose={() => setPayTableOpen(false)}
+      />
+
+      <BetSelectionModal
+        open={betSelectionOpen}
+        onClose={() => setBetSelectionOpen(false)}
+        betLevels={BET_LEVELS}
+        currentBetIndex={currentBetIndex}
+        currency={currency}
+        onSelectBet={(index) => {
+          stakeManager.setBetLevel(index);
+        }}
       />
 
       {showBonusOverlay && (

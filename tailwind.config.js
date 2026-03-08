@@ -7,9 +7,9 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        supercell: ['SupercellMagic', 'sans-serif'],
+        oswald: ['Oswald', 'sans-serif'],
         retro: ['RetroPixel', 'monospace'],
-        sans: ['SupercellMagic', 'sans-serif'], // Set default sans font to supercell
+        sans: ['Oswald', 'sans-serif'], // Set default sans font to Oswald
       },
     },
   },

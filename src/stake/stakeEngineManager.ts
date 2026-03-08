@@ -237,7 +237,6 @@ export class StakeEngineManager extends EventEmitter {
 
       } catch (error) {
         console.warn('[StakeEngine] RGS auth failed, falling back to demo:', error);
-        this._handleError(error as StakeEngineError);
       }
     }
 
@@ -306,8 +305,10 @@ export class StakeEngineManager extends EventEmitter {
         this.emit('playStarted', response.round);
         return { success: true, balance: this._balance, round: response.round };
       } catch (error) {
-        this._handleError(error as StakeEngineError);
-        return { success: false, balance: this._balance, error: error as StakeEngineError };
+        console.warn('[StakeEngine] Play failed, falling back to demo mode:', error);
+        this._mode = 'demo';
+        this.onModeChange?.(this._mode);
+        this.emit('modeChanged', this._mode);
       }
     }
 
@@ -327,12 +328,15 @@ export class StakeEngineManager extends EventEmitter {
         this.emit('roundEnded');
         return { success: true, balance: this._balance };
       } catch (error) {
-        this._handleError(error as StakeEngineError);
-        return { success: false, balance: this._balance, error: error as StakeEngineError };
+        console.warn('[StakeEngine] End round failed, falling back to demo mode:', error);
+        this._mode = 'demo';
+        this.onModeChange?.(this._mode);
+        this.emit('modeChanged', this._mode);
       }
     }
 
     // Demo mode
+    this._currentRound = null;
     this.emit('roundEnded');
     return { success: true, balance: this._balance };
   }
@@ -358,7 +362,10 @@ export class StakeEngineManager extends EventEmitter {
         console.info('[StakeEngine] Saved event with bet index:', this._currentBetIndex);
         return true;
       } catch (error) {
-        console.warn('[StakeEngine] Failed to save event:', error);
+        console.warn('[StakeEngine] Failed to save event, falling back to demo mode:', error);
+        this._mode = 'demo';
+        this.onModeChange?.(this._mode);
+        this.emit('modeChanged', this._mode);
         return false;
       }
     }
@@ -371,7 +378,10 @@ export class StakeEngineManager extends EventEmitter {
         const response = await this.client!.getBalance();
         this._updateBalanceFromRGS(response.balance);
       } catch (error) {
-        console.warn('[StakeEngine] Failed to refresh balance:', error);
+        console.warn('[StakeEngine] Failed to refresh balance, falling back to demo mode:', error);
+        this._mode = 'demo';
+        this.onModeChange?.(this._mode);
+        this.emit('modeChanged', this._mode);
       }
     }
     return this._balance;

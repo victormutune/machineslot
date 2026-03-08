@@ -28,7 +28,7 @@ const PayTableModal = ({ open, onClose }: PayTableModalProps) => {
         {/* Sticky Header */}
         <div className="z-20 w-full flex items-center justify-center px-6 py-4 sm:py-6 bg-transparent border-b border-white/10 shrink-0">
           <h2 className="text-2xl md:text-3xl font-bold text-yellow-400 drop-shadow-[2px_2px_0_rgba(0,0,0,0.8)]">
-            {t('Pay Table')}
+            {t('INFO')}
           </h2>
         </div>
 
@@ -40,7 +40,7 @@ const PayTableModal = ({ open, onClose }: PayTableModalProps) => {
           <section>
             <h3 className="text-base md:text-lg font-bold tracking-widest text-center text-[#7da2ce] mb-6">{t('HIGH SYMBOLS')}</h3>
             <div className="flex flex-wrap justify-center gap-4 md:gap-6 mb-10">
-              {SYMBOLS.filter(s => s.id !== 4 && (s.payouts?.[5] || 0) >= 20)
+              {SYMBOLS.filter(s => s.id !== 4 && s.id !== 8 && (s.payouts?.[5] || 0) >= 15)
                 .sort((a, b) => (b.payouts?.[5] || 0) - (a.payouts?.[5] || 0))
                 .map((symbol) => (
                   <div
@@ -50,11 +50,11 @@ const PayTableModal = ({ open, onClose }: PayTableModalProps) => {
                     <div className="flex-1 flex items-center justify-center mb-6 min-h-[70px]">
                       <img src={symbol.image} alt={symbol.name} className="w-16 h-16 md:w-[4.5rem] md:h-[4.5rem] object-contain drop-shadow-[0_6px_10px_rgba(0,0,0,0.8)]" />
                     </div>
-                    <div className="flex flex-col gap-1.5">
-                      {[3, 4, 5].map((multiplier) => (
-                        <div key={multiplier} className="flex justify-between items-center bg-black/40 border border-white/5 rounded px-3 py-1.5 text-xs md:text-sm">
+                    <div className="flex flex-col gap-1">
+                      {[3, 4, 5, 6].map((multiplier) => (
+                        <div key={multiplier} className="flex justify-between items-center bg-black/40 border border-white/5 rounded px-3 py-1 text-xs md:text-sm">
                           <span className="text-zinc-500 font-bold">{multiplier}x</span>
-                          <span className={`font-bold ${multiplier === 5 ? 'text-yellow-500' : 'text-zinc-100'}`}>
+                          <span className={`font-bold ${multiplier === 6 ? 'text-yellow-500' : 'text-zinc-100'}`}>
                             {symbol.payouts?.[multiplier as keyof typeof symbol.payouts] || 0}x
                           </span>
                         </div>
@@ -66,7 +66,7 @@ const PayTableModal = ({ open, onClose }: PayTableModalProps) => {
 
             <h3 className="text-base md:text-lg font-bold tracking-widest text-center text-[#7da2ce] mb-6">{t('LOW SYMBOLS')}</h3>
             <div className="flex flex-wrap justify-center gap-4 md:gap-6">
-              {SYMBOLS.filter(s => s.id !== 4 && (s.payouts?.[5] || 0) < 20)
+              {SYMBOLS.filter(s => s.id !== 4 && s.id !== 8 && (s.payouts?.[5] || 0) < 15)
                 .sort((a, b) => (b.payouts?.[5] || 0) - (a.payouts?.[5] || 0))
                 .map((symbol) => (
                   <div
@@ -76,11 +76,11 @@ const PayTableModal = ({ open, onClose }: PayTableModalProps) => {
                     <div className="flex-1 flex items-center justify-center mb-6 min-h-[70px]">
                       <img src={symbol.image} alt={symbol.name} className="w-16 h-16 md:w-[4.5rem] md:h-[4.5rem] object-contain drop-shadow-[0_6px_10px_rgba(0,0,0,0.8)]" />
                     </div>
-                    <div className="flex flex-col gap-1.5">
-                      {[3, 4, 5].map((multiplier) => (
-                        <div key={multiplier} className="flex justify-between items-center bg-black/40 border border-white/5 rounded px-3 py-1.5 text-xs md:text-sm">
+                    <div className="flex flex-col gap-1">
+                      {[3, 4, 5, 6].map((multiplier) => (
+                        <div key={multiplier} className="flex justify-between items-center bg-black/40 border border-white/5 rounded px-3 py-1 text-xs md:text-sm">
                           <span className="text-zinc-500 font-bold">{multiplier}x</span>
-                          <span className={`font-bold ${multiplier === 5 ? 'text-yellow-500 drop-shadow-[0_0_8px_rgba(234,179,8,0.4)]' : 'text-zinc-100'}`}>
+                          <span className={`font-bold ${multiplier === 6 ? 'text-yellow-500 drop-shadow-[0_0_8px_rgba(234,179,8,0.4)]' : 'text-zinc-100'}`}>
                             {symbol.payouts?.[multiplier as keyof typeof symbol.payouts] || 0}x
                           </span>
                         </div>
@@ -96,22 +96,38 @@ const PayTableModal = ({ open, onClose }: PayTableModalProps) => {
             <h3 className="text-xl font-bold text-yellow-400 mb-4 border-b border-white/10 pb-2">{t('Free Spins & Specials')}</h3>
             <div className="bg-black/20 p-4 rounded-lg text-center mb-4">
               <p className="text-zinc-300">
-                {t('Land 3 or more SCATTER symbols to')} {t('win')} {t('FREE SPINS')}.<br />
-                {t('During Free Spins, winnings are multiplied!')}
+                {t('Land 4 or more SCATTER symbols to')} {t('win')} {t('FREE SPINS')}.<br />
+                <span className="text-yellow-400 font-bold">{t('4 Scatters = 8 Free Spins | 5+ Scatters = 12 Free Spins')}</span>
               </p>
             </div>
             {(() => {
-              const football = SYMBOLS.find(s => s.id === 4);
-              if (!football) return null;
+              const scatter = SYMBOLS.find(s => s.id === 4);
+              const wild = SYMBOLS.find(s => s.id === 8);
               return (
-                <div className="bg-white/5 p-3 rounded-lg border border-white/10 flex items-center gap-3 max-w-xs mx-auto">
-                  <div className="w-12 h-12 flex-shrink-0 flex items-center justify-center">
-                    <img src={football.image} alt={football.name} className="max-w-full max-h-full object-contain" />
-                  </div>
-                  <div className="text-left">
-                    <div className="font-bold text-yellow-400">{football.name}</div>
-                    <div className="text-xs text-zinc-400">{t('SCATTER - Triggers Free Spins')}</div>
-                  </div>
+                <div className="flex flex-col sm:flex-row justify-center gap-4 max-w-2xl mx-auto">
+                    {scatter && (
+                      <div className="bg-white/5 p-3 rounded-lg border border-white/10 flex items-center gap-3 flex-1 min-w-[200px]">
+                        <div className="w-12 h-12 flex-shrink-0 flex items-center justify-center">
+                          <img src={scatter.image} alt={scatter.name} className="max-w-full max-h-full object-contain drop-shadow-[0_6px_10px_rgba(0,0,0,0.8)]" />
+                        </div>
+                        <div className="text-left">
+                          <div className="font-bold text-yellow-400">{scatter.name}</div>
+                          <div className="text-xs text-zinc-400">{t('SCATTER - Triggers Free Spins')}</div>
+                        </div>
+                      </div>
+                    )}
+                    {wild && (
+                      <div className="bg-white/5 p-3 rounded-lg border border-white/10 flex items-center gap-3 flex-1 min-w-[200px]">
+                        <div className="w-12 h-12 flex-shrink-0 flex items-center justify-center">
+                          <img src={wild.image} alt={wild.name} className="max-w-full max-h-full object-contain drop-shadow-[0_6px_10px_rgba(0,0,0,0.8)]" />
+                        </div>
+                        <div className="text-left">
+                          <div className="font-bold text-purple-400">{wild.name}</div>
+                          <div className="text-xs text-zinc-400 leading-tight mb-1">{t('WILD - Substitutes for all except Bonus.')}</div>
+                          <div className="text-[10px] text-yellow-400 font-bold leading-tight">{t('Multiplies line win by 2x, 3x, or 5x!')}</div>
+                        </div>
+                      </div>
+                    )}
                 </div>
               );
             })()}
@@ -120,8 +136,8 @@ const PayTableModal = ({ open, onClose }: PayTableModalProps) => {
             <ul className="list-disc list-inside space-y-3 text-zinc-300 bg-black/20 p-5 rounded-lg">
               <li>{t('All wins pay left to right on adjacent reels, starting from the leftmost reel.')}</li>
               <li>{t('Only the highest win is paid per winning combination.')}</li>
-              <li>{t('WILD symbol substitutes for all symbols except BONUS scatter.')}</li>
-              <li>{t('3 or more BONUS symbols trigger the')} {t('Free Spins feature')}.</li>
+              <li>{t('WILD symbol substitutes for all symbols except BONUS scatter. Wild wins are randomly multiplied by 2x, 3x, or 5x.')}</li>
+              <li>{t('4 or more BONUS symbols trigger the')} {t('Free Spins feature')}.</li>
               <li>{t('Malfunction voids all pays and plays.')}</li>
             </ul>
           </section>
