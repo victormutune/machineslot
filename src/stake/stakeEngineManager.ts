@@ -18,6 +18,7 @@ import type {
   GameConfig,
   RoundData,
   Currency,
+  Balance,
 } from './stakeEngineClient';
 
 import { getLocaleManager } from '../locale/locale';
@@ -158,7 +159,7 @@ export class StakeEngineManager extends EventEmitter {
   // Initialization
   // ─────────────────────────────────────────────
 
-  private _updateBalanceFromRGS(balanceData: { amount: number, currency: Currency }): void {
+  private _updateBalanceFromRGS(balanceData: Balance): void {
     const newCurrency = balanceData.currency;
     const newAmount   = fromRGSAmount(balanceData.amount);
 
@@ -230,10 +231,6 @@ export class StakeEngineManager extends EventEmitter {
           getLocaleManager().setSocialMode(false);
         }
 
-<<<<<<< HEAD
-        this.onConfigLoaded?.(authResponse.config);
-        this._updateBalanceFromRGS(authResponse.balance);
-=======
         // Restore bet index from saved round event if available
         if (this._currentRound?.event) {
           try {
@@ -248,19 +245,15 @@ export class StakeEngineManager extends EventEmitter {
 
         this.onConfigLoaded?.(auth.config);
         this._updateBalanceFromRGS(auth.balance);
->>>>>>> 92b5c45 (rgs)
         this.onModeChange?.(this._mode);
         this.emit('authenticated', auth);
         this._initialized = true;
 
-<<<<<<< HEAD
-=======
         console.info(`[StakeEngine] Initialized in ${this._mode} mode`);
         console.info(`[StakeEngine] Bet levels: ${this._betLevels.map(fromRGSAmount).join(', ')}`);
         console.info(`[StakeEngine] Bet index: ${this._currentBetIndex}, amount: ${fromRGSAmount(this.currentBet)}`);
 
         // Resume any active/stuck round
->>>>>>> 92b5c45 (rgs)
         if (this._currentRound?.state === 'active') {
           console.info('[StakeEngine] Active round found — emitting resumeRound');
           this.emit('resumeRound', this._currentRound);
@@ -326,10 +319,8 @@ export class StakeEngineManager extends EventEmitter {
     return false;
   }
 
-  setBetAmount(amount: number): boolean {
-    const rgsAmount = toRGSAmount(amount);
-    const index = this._betLevels.findIndex(level => level >= rgsAmount);
-    if (index !== -1) {
+  setBetLevel(index: number): boolean {
+    if (index >= 0 && index < this._betLevels.length) {
       this._currentBetIndex = index;
       this.emit('betChanged', this.currentBet, this.currentBetDisplay);
       return true;
@@ -337,9 +328,6 @@ export class StakeEngineManager extends EventEmitter {
     return false;
   }
 
-<<<<<<< HEAD
-  // ── Private helpers ────────────────────────────────────────────────────────
-=======
   setBetAmount(amount: number): boolean {
     const rgsAmount = toRGSAmount(amount);
     const index = this._betLevels.findIndex(level => level >= rgsAmount);
@@ -465,7 +453,11 @@ export class StakeEngineManager extends EventEmitter {
   // ─────────────────────────────────────────────
   // Private helpers
   // ─────────────────────────────────────────────
->>>>>>> 92b5c45 (rgs)
+
+  private _applyDefaultBet(defaultBetLevel: number): void {
+    const idx = this._betLevels.indexOf(defaultBetLevel);
+    if (idx !== -1) this._currentBetIndex = idx;
+  }
 
   private _emitBalanceUpdate(): void {
     this.onBalanceUpdate?.(this._balance, this.formattedBalance);
@@ -488,20 +480,15 @@ export class StakeEngineManager extends EventEmitter {
 
 let _instance: StakeEngineManager | null = null;
 
-<<<<<<< HEAD
-export function getStakeEngineManager(config?: StakeEngineManagerConfig): StakeEngineManager {
-=======
 /** Get (or create) the singleton StakeEngineManager. */
 export function getStakeEngineManager(
   config?: StakeEngineManagerConfig
 ): StakeEngineManager {
->>>>>>> 92b5c45 (rgs)
   if (!_instance) _instance = new StakeEngineManager(config);
   return _instance;
 }
 
+/** Reset the singleton (useful for testing). */
 export function resetStakeEngineManager(): void {
   _instance = null;
 }
-
-

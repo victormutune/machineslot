@@ -13,12 +13,14 @@ import ClockDisplay from './components/ui/ClockDisplay';
 import { calculateWin, type WinResult } from './slot/winLogic';
 import {
   emitRoundActive,
+  formatBalance,
 } from './stake/stakeEngineHelpers';
 import { getStakeEngineManager } from './stake/stakeEngineManager';
 import { t } from './locale/locale';
 
 // ── Bet levels (display dollars) ──────────────────────────────────────────────
-const BET_LEVELS = [1.00, 2.00, 5.00, 10.00, 20.00, 50.00, 100.00,200.00,500.00,1000.00];
+// 10 levels: $1 → $500. Matches manager default. RGS overrides these on auth.
+const BET_LEVELS = [1.00, 2.00, 5.00, 10.00, 20.00, 50.00, 75.00, 100.00, 200.00, 500.00];
 const DEFAULT_BET_INDEX = 2; // $5.00
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -130,7 +132,9 @@ function App() {
   useEffect(() => {
     const initManager = async () => {
        await stakeManager.initialize();
-       setBalance(stakeManager.currentBetDisplay > 0 ? stakeManager.balance : 10000);
+       setBalance(stakeManager.balance > 0 ? stakeManager.balance : 10000);
+       // Sync the bet index the manager settled on (may differ in RGS/social mode)
+       setCurrentBetIndex(stakeManager.currentBetIndex);
        // Capture the live currency from the RGS session
        setCurrency(stakeManager.currency ?? 'USD');
        
@@ -138,9 +142,10 @@ function App() {
          setBalance(newBal);
        });
        
-       stakeManager.on('betChanged', (_betRGS: number, newDisplayBet: number) => {
-          const newIdx = BET_LEVELS.indexOf(newDisplayBet);
-          if (newIdx !== -1) setCurrentBetIndex(newIdx);
+       stakeManager.on('betChanged', () => {
+          // Use manager index directly - avoids indexOf mismatch when
+          // RGS returns different bet levels than app's local BET_LEVELS
+          setCurrentBetIndex(stakeManager.currentBetIndex);
        });
        
        stakeManager.on('resumeRound', async (round: any) => {
@@ -385,7 +390,7 @@ function App() {
 
     if (wonFreeSpins > 0) {
       const parts: string[] = [];
-      if (winAmount > 0) parts.push(`${t('You have won')} $${winAmount.toLocaleString('en-US')}`);
+      if (winAmount > 0) parts.push(`${t('You have won')} ${formatBalance(winAmount, currency)}`);
       if (wonFreeSpins > 0) parts.push(`${t('You received')} ${wonFreeSpins} ${t('free spins')}`);
       setStatusMessage(parts.join(' • '));
 
@@ -481,6 +486,7 @@ function App() {
                 turboSpin={turboSpin}
                 winResult={winResult}
                 reelStrips={currentStrips}
+                currency={currency}
               />
             </GoldenFrame>
             <Mascot isWinning={!!winResult && winResult.totalWin > 0} />
