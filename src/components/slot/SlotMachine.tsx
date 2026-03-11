@@ -16,6 +16,7 @@ interface SlotMachineProps {
   turboSpin?: boolean;
   winResult: WinResult | null;
   reelStrips?: number[][];
+  currency?: string;
 }
 
 // How long (ms) a symbol stays "popped" — matches TRAVEL_MS in PaylineOverlay
@@ -28,6 +29,7 @@ const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>((
   turboSpin = false,
   winResult,
   reelStrips = REEL_STRIPS,
+  currency = 'USD',
 }, ref) => {
 
   const [isSpinning, setIsSpinning] = React.useState(false);
@@ -150,6 +152,7 @@ const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>((
         stopIndices={currentStopIndices}
         freeSpinsWon={winResult?.freeSpins ?? 0}
         showAmount={paylinePhase === 'flowing'}
+        currency={currency}
       />
     </div>
   );

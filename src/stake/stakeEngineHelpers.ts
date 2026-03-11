@@ -1,43 +1,53 @@
 /**
  * stakeEngineHelpers.ts
- * Shared helpers that wrap stake-engine's DisplayAmount / ParseAmount
- * for use across components (avoids circular App ↔ ControlPanel imports).
+ * Shared helpers for balance/bet formatting and stake-engine window events.
+ * Uses internal stakeEngineClient utilities — no stake-engine npm package needed.
  */
-import { DisplayAmount, ParseAmount, parseBalance } from 'stake-engine';
-import type { Balance } from 'stake-engine';
+
+import {
+  formatBalance as _formatBalance,
+  fromRGSAmount,
+  toRGSAmount,
+} from './stakeEngineClient';
+
+import type { Balance } from './stakeEngineClient';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Formatting helpers
+// ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * stake-engine uses micro-units: 1 USD = 1_000_000 units.
- */
-const API_MULTIPLIER = 1_000_000;
-
-/** Convert a plain-dollar amount to a stake-engine Balance micro-unit object. */
-export const toBalance = (dollars: number, currency: string = 'USD'): Balance =>
-  parseBalance({ amount: Math.round(dollars * API_MULTIPLIER), currency });
-
-/**
- * Format a dollar balance with currency symbol.
- * e.g. 10000 → "$10,000.00"
+ * Format a display-dollar balance with its currency symbol.
+ * e.g. formatBalance(10000, 'USD') → "$10,000.00"
  */
 export const formatBalance = (dollars: number, currency: string = 'USD'): string =>
-  DisplayAmount(toBalance(dollars, currency), { decimals: 2 });
+  _formatBalance({ amount: toRGSAmount(dollars), currency: currency as Balance['currency'] });
 
 /**
  * Format a bet amount, trimming unnecessary decimals for whole numbers.
- * e.g. 100 → "$100"  |  10.5 → "$10.50"
+ * e.g. formatBet(100, 'USD') → "$100"  |  formatBet(10.5, 'USD') → "$10.50"
  */
-export const formatBet = (dollars: number, currency: string = 'USD'): string =>
-  DisplayAmount(toBalance(dollars, currency), {
-    decimals: 2,
-    trimDecimalForIntegers: true,
-  });
-
-/** Emit a stake-engine balanceUpdate window event (micro-unit amount). */
-export const emitBalanceUpdate = (dollars: number, currency: string = 'USD'): void => {
-  window.dispatchEvent(
-    new CustomEvent<Balance>('balanceUpdate', { detail: toBalance(dollars, currency) })
-  );
+export const formatBet = (dollars: number, currency: string = 'USD'): string => {
+  const formatted = _formatBalance({ amount: toRGSAmount(dollars), currency: currency as Balance['currency'] });
+  // Trim ".00" suffix for whole-number bets (e.g. "$100.00" → "$100")
+  return formatted.replace(/\.00$/, '').replace(/(\.\d)0$/, '$1');
 };
+
+/**
+ * Convert a plain-dollar amount to RGS micro-units.
+ * e.g. toMicroUnits(10.5) → 10_500_000
+ */
+export const toMicroUnits = (dollars: number): number => toRGSAmount(dollars);
+
+/**
+ * Convert RGS micro-units back to a plain-dollar amount.
+ * e.g. fromMicroUnits(10_500_000) → 10.5
+ */
+export const fromMicroUnits = (amount: number): number => fromRGSAmount(amount);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Window event helpers
+// ─────────────────────────────────────────────────────────────────────────────
 
 /** Emit a stake-engine roundActive window event. */
 export const emitRoundActive = (active: boolean): void => {
@@ -46,5 +56,11 @@ export const emitRoundActive = (active: boolean): void => {
   );
 };
 
-/** Convert a stake-engine micro-unit amount back to plain dollars. */
-export const fromMicroUnits = (amount: number): number => ParseAmount(amount);
+/** Emit a stake-engine balanceUpdate window event (micro-unit amount). */
+export const emitBalanceUpdate = (dollars: number, currency: string = 'USD'): void => {
+  window.dispatchEvent(
+    new CustomEvent<{ amount: number; currency: string }>('balanceUpdate', {
+      detail: { amount: toRGSAmount(dollars), currency },
+    })
+  );
+};

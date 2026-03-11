@@ -118,7 +118,17 @@ export default function SlotControlPanel({
 
                 <div className="flex flex-col">
                   <span className="hidden sm:block text-[10px] text-gray-400 font-bold tracking-wider uppercase">{t('Balance')}</span>
-                  <span className="text-sm sm:text-xl font-bold text-white tracking-wide">{formatBalance(balance, cur)}</span>
+                  <div className="flex items-center gap-1.5">
+                    {cur === 'XGC' && (
+                      <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300 border border-yellow-400/40 leading-none">★GC</span>
+                    )}
+                    {cur === 'XSC' && (
+                      <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full bg-slate-400/20 text-slate-300 border border-slate-400/40 leading-none">◆SC</span>
+                    )}
+                    <span className={`text-sm sm:text-xl font-bold tracking-wide ${cur === 'XGC' ? 'text-yellow-300' : cur === 'XSC' ? 'text-slate-300' : 'text-white'}`}>
+                      {formatBalance(balance, cur)}
+                    </span>
+                  </div>
                 </div>
               </div>
 

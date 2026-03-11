@@ -164,8 +164,8 @@ const CurrencyMetaMap: Record<Currency, CurrencyMeta> = {
   OMR: { symbol: 'OMR', decimals: 2, symbolAfter: true },
   QAR: { symbol: 'QAR', decimals: 2, symbolAfter: true },
   BHD: { symbol: 'BD', decimals: 2 },
-  XGC: { symbol: 'GC', decimals: 2 },
-  XSC: { symbol: 'SC', decimals: 2 },
+  XGC: { symbol: '★GC ', decimals: 0 },  // Gold Coins  – social casino
+  XSC: { symbol: '◆SC ', decimals: 0 },  // Silver Coins – social casino
 };
 
 /**

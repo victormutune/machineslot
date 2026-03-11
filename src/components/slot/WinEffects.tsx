@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { type WinResult } from '../../slot/winLogic';
+import { formatBalance } from '../../stake/stakeEngineHelpers';
 
 interface WinEffectsProps {
   winResult: WinResult | null;
   stopIndices: number[];
   freeSpinsWon?: number;
   showAmount?: boolean;
+  currency?: string;
 }
 
 const WinEffects: React.FC<WinEffectsProps> = ({
@@ -13,6 +15,7 @@ const WinEffects: React.FC<WinEffectsProps> = ({
   stopIndices,
   freeSpinsWon = 0,
   showAmount = false,
+  currency = 'USD',
 }) => {
   const [showEffects, setShowEffects] = useState(false);
   const [displayedWin, setDisplayedWin] = useState(0);
@@ -125,7 +128,7 @@ const WinEffects: React.FC<WinEffectsProps> = ({
                 opacity:   amountAnim === 'visible' ? 1 : undefined,
               }}
             >
-              ${displayedWin.toLocaleString('en-US')}
+              {formatBalance(displayedWin, currency)}
             </h2>
           )}
 
