@@ -68,7 +68,7 @@ const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>((
       setCurrentStopIndices(stopIndices);
       setPoppedCols(new Set());
 
-      const STOP_GAP    = instantSpin ? 0.06  : turboSpin ? 0.12  : 0.20;
+      const STOP_GAP    = instantSpin ? 0.06  : turboSpin ? 0.12  : 0.18;
       const LOOP_DUR    = instantSpin ? 0.015 : turboSpin ? 0.10  : 0.15;
       const LANDING_DUR = instantSpin ? 0.12  : turboSpin ? 0.50  : 0.85;
       const animMult    = instantSpin ? 0.1   : 1;
