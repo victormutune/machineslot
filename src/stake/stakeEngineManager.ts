@@ -1,27 +1,19 @@
 /**
  * stakeEngineManager.ts
- * Manages the game integration with Stake Engine RGS.
+ * Manages the game integration with official Stake Engine RGS npm package.
  * Handles RGS mode, Social/Demo mode.
  */
 
-import {
-  StakeEngineClient,
-  StakeEngineError,
-  fromRGSAmount,
-  toRGSAmount,
-  formatBalance,
-  parseURLParams,
-  isSocialCasinoCurrency,
-} from './stakeEngineClient';
-
+import { RGSClient, DisplayAmount } from 'stake-engine';
 import type {
-  GameConfig,
-  RoundData,
-  Currency,
   Balance,
-} from './stakeEngineClient';
+  AuthenticateConfig,
+  Round,
+  Currency,
+} from 'stake-engine';
 
 import { getLocaleManager } from '../locale/locale';
+import { fromMicroUnits, toMicroUnits } from './stakeEngineHelpers';
 
 // ============================================================================
 // Types
@@ -34,16 +26,16 @@ export interface StakeEngineManagerConfig {
   defaultBetLevels?: number[];
   defaultBetIndex?: number;
   onBalanceUpdate?: (balance: number, formatted: string) => void;
-  onConfigLoaded?: (config: GameConfig) => void;
-  onError?: (error: StakeEngineError) => void;
+  onConfigLoaded?: (config: AuthenticateConfig) => void;
+  onError?: (error: Error) => void;
   onModeChange?: (mode: GameMode) => void;
 }
 
 export interface SpinResult {
   success: boolean;
   balance: number;
-  round?: RoundData;
-  error?: StakeEngineError;
+  round?: Round;
+  error?: Error;
 }
 
 // ============================================================================
@@ -84,12 +76,12 @@ class EventEmitter {
 
 export class StakeEngineManager extends EventEmitter {
 
-  private client: StakeEngineClient | null = null;
+  private client: ReturnType<typeof RGSClient> | null = null;
 
   private _mode: GameMode = 'demo';
   private _balance = 1000;
   private _currency: Currency = 'USD';
-  private _config: GameConfig | null = null;
+  private _config: AuthenticateConfig | null = null;
 
   private _betLevels: number[] = [
     1_000_000,   //  $1
@@ -102,15 +94,20 @@ export class StakeEngineManager extends EventEmitter {
     100_000_000, // $100
     200_000_000, // $200
     500_000_000, // $500
+    750_000_000,
+    1_000_000_000,
+    2_000_000_000,
+    5_000_000_000,
+    10_000_000_000,
   ];
 
   private _currentBetIndex = 2;
-  private _currentRound: RoundData | null = null;
+  private _currentRound: Round | null = null;
   private _initialized = false;
 
   private onBalanceUpdate?: (balance: number, formatted: string) => void;
-  private onConfigLoaded?: (config: GameConfig) => void;
-  private onError?: (error: StakeEngineError) => void;
+  private onConfigLoaded?: (config: AuthenticateConfig) => void;
+  private onError?: (error: Error) => void;
   private onModeChange?: (mode: GameMode) => void;
 
   constructor(config?: StakeEngineManagerConfig) {
@@ -135,24 +132,24 @@ export class StakeEngineManager extends EventEmitter {
   get mode(): GameMode              { return this._mode; }
   get balance(): number             { return this._balance; }
   get currency(): Currency          { return this._currency; }
-  get config(): GameConfig | null   { return this._config; }
+  get config(): AuthenticateConfig | null   { return this._config; }
   get betLevels(): number[]         { return this._betLevels; }
   get currentBetIndex(): number     { return this._currentBetIndex; }
   get currentBet(): number          { return this._betLevels[this._currentBetIndex] ?? 1_000_000; }
-  get currentBetDisplay(): number   { return fromRGSAmount(this.currentBet); }
-  get currentRound(): RoundData | null { return this._currentRound; }
+  get currentBetDisplay(): number   { return fromMicroUnits(this.currentBet); }
+  get currentRound(): Round | null { return this._currentRound; }
   get isInitialized(): boolean      { return this._initialized; }
   get isRGSMode(): boolean          { return this._mode === 'rgs'; }
   get isSocialMode(): boolean       { return this._mode === 'social'; }
   get isDemoMode(): boolean         { return this._mode === 'demo'; }
-  get isSocialCasino(): boolean     { return this._config?.jurisdiction.socialCasino ?? false; }
+  get isSocialCasino(): boolean     { return this._mode === 'social'; }
 
   get formattedBalance(): string {
-    return formatBalance({ amount: toRGSAmount(this._balance), currency: this._currency });
+    return DisplayAmount({ amount: toMicroUnits(this._balance), currency: this._currency });
   }
 
   get formattedBet(): string {
-    return formatBalance({ amount: this.currentBet, currency: this._currency });
+    return DisplayAmount({ amount: this.currentBet, currency: this._currency }, { trimDecimalForIntegers: true });
   }
 
   // ─────────────────────────────────────────────
@@ -161,7 +158,7 @@ export class StakeEngineManager extends EventEmitter {
 
   private _updateBalanceFromRGS(balanceData: Balance): void {
     const newCurrency = balanceData.currency;
-    const newAmount   = fromRGSAmount(balanceData.amount);
+    const newAmount   = fromMicroUnits(balanceData.amount);
 
     let currencyChanged = false;
     if (newCurrency !== this._currency) {
@@ -173,11 +170,11 @@ export class StakeEngineManager extends EventEmitter {
 
     if (currencyChanged) {
       const isSocialFromURL  = new URLSearchParams(window.location.search).get('social') === 'true';
-      const isConfigSocial   = this._config?.jurisdiction.socialCasino ?? false;
+      const isConfigSocial   = this._mode === 'social'; // We'll refine this in initialize
 
       let newMode: GameMode = this._mode;
 
-      if (isSocialFromURL || isConfigSocial || isSocialCasinoCurrency(newCurrency)) {
+      if (isSocialFromURL || isConfigSocial || newCurrency === 'XGC' || newCurrency === 'XSC') {
         newMode = 'social';
       } else {
         newMode = 'rgs';
@@ -199,30 +196,34 @@ export class StakeEngineManager extends EventEmitter {
   }
 
   async initialize(): Promise<boolean> {
-    // Guard: React StrictMode mounts effects twice — skip if already done
     if (this._initialized) return true;
-    const params           = parseURLParams();
+
     const urlParams        = new URLSearchParams(window.location.search);
+    const sessionID        = urlParams.get('sessionID');
+    const rgs_url          = urlParams.get('rgs_url');
     const isSocialFromURL  = urlParams.get('social') === 'true';
     const currencyFromURL  = urlParams.get('currency') as Currency | null;
     const balanceFromURL   = urlParams.get('balance');
 
-    if (params) {
-      this.client = new StakeEngineClient(params.sessionID, params.rgs_url);
-
+    if (sessionID && rgs_url) {
       try {
-        const auth = await this.client.authenticate();
+        this.client = RGSClient({
+          url: window.location.href,
+        });
+
+        const auth = await this.client.Authenticate();
 
         this._config       = auth.config;
         this._betLevels    = auth.config.betLevels;
-        this._balance      = fromRGSAmount(auth.balance.amount);
+        this._balance      = fromMicroUnits(auth.balance.amount);
         this._currency     = auth.balance.currency;
-        this._currentRound = auth.round ?? null;
+        this._currentRound = auth.round;
 
         if (
           isSocialFromURL ||
-          auth.config.jurisdiction.socialCasino ||
-          isSocialCasinoCurrency(auth.balance.currency)
+          auth.jurisdictionFlags.socialCasino ||
+          auth.balance.currency === 'XGC' ||
+          auth.balance.currency === 'XSC'
         ) {
           this._mode = 'social';
           getLocaleManager().setSocialMode(true);
@@ -231,30 +232,18 @@ export class StakeEngineManager extends EventEmitter {
           getLocaleManager().setSocialMode(false);
         }
 
-        // Restore bet index from saved round event if available
-        if (this._currentRound?.event) {
-          try {
-            const saved = JSON.parse(this._currentRound.event) as { betIndex?: number };
-            if (saved.betIndex !== undefined) this._currentBetIndex = saved.betIndex;
-          } catch {
-            this._applyDefaultBet(auth.config.defaultBetLevel);
-          }
-        } else {
-          this._applyDefaultBet(auth.config.defaultBetLevel);
-        }
+        this._applyDefaultBet(auth.config.defaultBetLevel);
 
         this.onConfigLoaded?.(auth.config);
+        this.emit('configLoaded', auth.config);
         this._updateBalanceFromRGS(auth.balance);
         this.onModeChange?.(this._mode);
         this.emit('authenticated', auth);
         this._initialized = true;
 
         console.info(`[StakeEngine] Initialized in ${this._mode} mode`);
-        console.info(`[StakeEngine] Bet levels: ${this._betLevels.map(fromRGSAmount).join(', ')}`);
-        console.info(`[StakeEngine] Bet index: ${this._currentBetIndex}, amount: ${fromRGSAmount(this.currentBet)}`);
 
-        // Resume any active/stuck round
-        if (this._currentRound?.state === 'active') {
+        if (this._currentRound?.active) {
           console.info('[StakeEngine] Active round found — emitting resumeRound');
           this.emit('resumeRound', this._currentRound);
         }
@@ -279,7 +268,7 @@ export class StakeEngineManager extends EventEmitter {
       if (!isNaN(parsed)) this._balance = parsed;
     }
 
-    if (isSocialFromURL || isSocialCasinoCurrency(this._currency)) {
+    if (isSocialFromURL || this._currency === 'XGC' || this._currency === 'XSC') {
       this._mode = 'social';
       getLocaleManager().setSocialMode(true);
     } else {
@@ -291,8 +280,6 @@ export class StakeEngineManager extends EventEmitter {
     this.emit('demoMode');
 
     console.info(`[StakeEngine] Running in ${this._mode} mode`);
-    console.info(`[StakeEngine] Currency: ${this._currency}`);
-    console.info(`[StakeEngine] Balance: ${this._balance}`);
 
     return true;
   }
@@ -329,8 +316,8 @@ export class StakeEngineManager extends EventEmitter {
   }
 
   setBetAmount(amount: number): boolean {
-    const rgsAmount = toRGSAmount(amount);
-    const index = this._betLevels.findIndex(level => level >= rgsAmount);
+    const microAmount = toMicroUnits(amount);
+    const index = this._betLevels.findIndex(level => level >= microAmount);
     if (index !== -1) return this.setBetLevel(index);
     return false;
   }
@@ -343,19 +330,22 @@ export class StakeEngineManager extends EventEmitter {
     const bet = this.currentBetDisplay;
 
     if (this._balance < bet) {
-      const error = new StakeEngineError('ERR_IPB', 'Insufficient balance');
+      const error = new Error('Insufficient balance');
       this._handleError(error);
       return { success: false, balance: this._balance, error };
     }
 
     if (this.isRGSMode || this.isSocialMode) {
       try {
-        const res = await this.client!.play(this.currentBet, mode);
+        const res = await this.client!.Play({
+          amount: this.currentBet,
+          mode,
+        });
         this._currentRound = res.round;
         this._updateBalanceFromRGS(res.balance);
         this.emit('playStarted', res.round);
         return { success: true, balance: this._balance, round: res.round };
-      } catch (error) {
+      } catch (error: any) {
         console.warn('[StakeEngine] play failed, falling back to demo', error);
         this._mode = 'demo';
         this.onModeChange?.(this._mode);
@@ -377,12 +367,12 @@ export class StakeEngineManager extends EventEmitter {
   async endRound(): Promise<SpinResult> {
     if (this.isRGSMode || this.isSocialMode) {
       try {
-        const res = await this.client!.endRound();
+        const res = await this.client!.EndRound();
         this._currentRound = null;
         this._updateBalanceFromRGS(res.balance);
         this.emit('roundEnded');
         return { success: true, balance: this._balance };
-      } catch (error) {
+      } catch (error: any) {
         console.warn('[StakeEngine] endRound failed, falling back to demo', error);
         this._mode = 'demo';
         this.onModeChange?.(this._mode);
@@ -412,43 +402,18 @@ export class StakeEngineManager extends EventEmitter {
   async saveEvent(event: string): Promise<boolean> {
     if (this.isRGSMode || this.isSocialMode) {
       try {
-        let data: Record<string, unknown> = {};
-        try { data = JSON.parse(event) as Record<string, unknown>; }
-        catch { data = { data: event }; }
-        data.betIndex  = this._currentBetIndex;
-        data.betAmount = this.currentBet;
-        await this.client!.saveEvent(JSON.stringify(data));
-        console.info('[StakeEngine] Saved event with bet index:', this._currentBetIndex);
+        await this.client!.Event(event);
         return true;
       } catch (error) {
-        console.warn('[StakeEngine] saveEvent failed, falling back to demo', error);
-        this._mode = 'demo';
-        this.onModeChange?.(this._mode);
-        this.emit('modeChanged', this._mode);
+        console.warn('[StakeEngine] saveEvent failed', error);
         return false;
       }
     }
     return true;
   }
 
-  /** Refresh balance from RGS. */
-  async refreshBalance(): Promise<number> {
-    if (this.isRGSMode || this.isSocialMode) {
-      try {
-        const res = await this.client!.getBalance();
-        this._updateBalanceFromRGS(res.balance);
-      } catch (error) {
-        console.warn('[StakeEngine] refreshBalance failed, falling back to demo', error);
-        this._mode = 'demo';
-        this.onModeChange?.(this._mode);
-        this.emit('modeChanged', this._mode);
-      }
-    }
-    return this._balance;
-  }
-
-  isFullscreenAllowed(): boolean { return !(this._config?.jurisdiction.disabledFullscreen ?? false); }
-  isTurboAllowed(): boolean      { return !(this._config?.jurisdiction.disabledTurbo      ?? false); }
+  isFullscreenAllowed(): boolean { return !(this.client?.jurisdictionFlags.disabledFullscreen ?? false); }
+  isTurboAllowed(): boolean      { return !(this.client?.jurisdictionFlags.disabledTurbo      ?? false); }
 
   // ─────────────────────────────────────────────
   // Private helpers
@@ -460,17 +425,14 @@ export class StakeEngineManager extends EventEmitter {
   }
 
   private _emitBalanceUpdate(): void {
-    this.onBalanceUpdate?.(this._balance, this.formattedBalance);
-    this.emit('balanceUpdate', this._balance, this.formattedBalance);
+    const formatted = this.formattedBalance;
+    this.onBalanceUpdate?.(this._balance, formatted);
+    this.emit('balanceUpdate', this._balance, formatted);
   }
 
-  private _handleError(error: StakeEngineError): void {
+  private _handleError(error: Error): void {
     this.onError?.(error);
     this.emit('error', error);
-    if (error.isInvalidSession())          this.emit('sessionExpired');
-    else if (error.isMaintenanceMode())    this.emit('maintenance');
-    else if (error.isLocationRestricted()) this.emit('locationRestricted');
-    else if (error.isGamblingLimitExceeded()) this.emit('gamblingLimitExceeded');
   }
 }
 

@@ -1,16 +1,15 @@
 /**
  * stakeEngineHelpers.ts
  * Shared helpers for balance/bet formatting and stake-engine window events.
- * Uses internal stakeEngineClient utilities — no stake-engine npm package needed.
+ * Uses the official stake-engine npm package.
  */
 
 import {
-  formatBalance as _formatBalance,
-  fromRGSAmount,
-  toRGSAmount,
-} from './stakeEngineClient';
+  DisplayAmount,
+  ParseAmount,
+} from 'stake-engine';
 
-import type { Balance } from './stakeEngineClient';
+const API_MULTIPLIER = 1000000;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Formatting helpers
@@ -21,29 +20,30 @@ import type { Balance } from './stakeEngineClient';
  * e.g. formatBalance(10000, 'USD') → "$10,000.00"
  */
 export const formatBalance = (dollars: number, currency: string = 'USD'): string =>
-  _formatBalance({ amount: toRGSAmount(dollars), currency: currency as Balance['currency'] });
+  DisplayAmount({ amount: toMicroUnits(dollars), currency: currency as any });
 
 /**
  * Format a bet amount, trimming unnecessary decimals for whole numbers.
  * e.g. formatBet(100, 'USD') → "$100"  |  formatBet(10.5, 'USD') → "$10.50"
  */
 export const formatBet = (dollars: number, currency: string = 'USD'): string => {
-  const formatted = _formatBalance({ amount: toRGSAmount(dollars), currency: currency as Balance['currency'] });
-  // Trim ".00" suffix for whole-number bets (e.g. "$100.00" → "$100")
-  return formatted.replace(/\.00$/, '').replace(/(\.\d)0$/, '$1');
+  return DisplayAmount(
+    { amount: toMicroUnits(dollars), currency: currency as any },
+    { trimDecimalForIntegers: true }
+  );
 };
 
 /**
  * Convert a plain-dollar amount to RGS micro-units.
  * e.g. toMicroUnits(10.5) → 10_500_000
  */
-export const toMicroUnits = (dollars: number): number => toRGSAmount(dollars);
+export const toMicroUnits = (dollars: number): number => Math.round(dollars * API_MULTIPLIER);
 
 /**
  * Convert RGS micro-units back to a plain-dollar amount.
  * e.g. fromMicroUnits(10_500_000) → 10.5
  */
-export const fromMicroUnits = (amount: number): number => fromRGSAmount(amount);
+export const fromMicroUnits = (amount: number): number => ParseAmount(amount);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Window event helpers
@@ -60,7 +60,7 @@ export const emitRoundActive = (active: boolean): void => {
 export const emitBalanceUpdate = (dollars: number, currency: string = 'USD'): void => {
   window.dispatchEvent(
     new CustomEvent<{ amount: number; currency: string }>('balanceUpdate', {
-      detail: { amount: toRGSAmount(dollars), currency },
+      detail: { amount: toMicroUnits(dollars), currency },
     })
   );
 };

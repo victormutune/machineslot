@@ -14,21 +14,31 @@ import { calculateWin, type WinResult } from './slot/winLogic';
 import {
   emitRoundActive,
   formatBalance,
+  fromMicroUnits,
 } from './stake/stakeEngineHelpers';
 import { getStakeEngineManager } from './stake/stakeEngineManager';
 import { t } from './locale/locale';
 
-// ── Bet levels (display dollars) ──────────────────────────────────────────────
-// 10 levels: $1 → $500. Matches manager default. RGS overrides these on auth.
-const BET_LEVELS = [1.00, 2.00, 5.00, 10.00, 20.00, 50.00, 75.00, 100.00, 200.00, 500.00];
+// Default bet index used before RGS auth resolves (index into manager's built-in levels)
 const DEFAULT_BET_INDEX = 2; // $5.00
 
 // ─────────────────────────────────────────────────────────────────────────────
 
 function App() {
+  // Manager is the single source of truth for bet levels in ALL modes (demo, social, RGS).
+  // Created before useState so the lazy initializer can read its built-in defaults.
+  const stakeManager = getStakeEngineManager({
+    defaultBalance: 10000,
+    defaultBetIndex: DEFAULT_BET_INDEX,
+  });
+
   const [balance, setBalance] = useState(10000);
   const [currentBetIndex, setCurrentBetIndex] = useState(DEFAULT_BET_INDEX);
-  const currentBet = BET_LEVELS[currentBetIndex];
+  // Lazily initialised from the manager's built-in defaults (RGS overrides on auth)
+  const [betLevels, setBetLevels] = useState<number[]>(() =>
+    stakeManager.betLevels.map(fromMicroUnits)
+  );
+  const currentBet = betLevels[currentBetIndex] ?? betLevels[0];
   const [, setLastWin] = useState(0);
   const [winResult, setWinResult] = useState<WinResult | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
@@ -74,11 +84,7 @@ function App() {
   const autoSpinRemainingRef = useRef<number | null>(null);
   const handleSpinStartRef = useRef<(featureBuy?: string) => Promise<void>>(async () => {});
   
-  const stakeManager = getStakeEngineManager({
-     defaultBalance: 10000,
-     defaultBetIndex: DEFAULT_BET_INDEX,
-     defaultBetLevels: BET_LEVELS.map(amount => Math.round(amount * 1_000_000))
-  });
+
 
   // ── Audio References ───────────────────────────────────────────────────────
   const bgMusicRef = useRef<HTMLAudioElement | null>(null);
@@ -132,19 +138,37 @@ function App() {
   useEffect(() => {
     const initManager = async () => {
        await stakeManager.initialize();
+
+       // ── Sync balance ──
        setBalance(stakeManager.balance > 0 ? stakeManager.balance : 10000);
-       // Sync the bet index the manager settled on (may differ in RGS/social mode)
+
+       // ── Sync bet levels from manager (RGS or demo defaults) ──
+       // stakeManager.betLevels are in RGS micro-units; convert to display dollars.
+       if (stakeManager.betLevels.length > 0) {
+         setBetLevels(stakeManager.betLevels.map(fromMicroUnits));
+       }
+
+       // ── Sync the bet index the manager settled on ──
        setCurrentBetIndex(stakeManager.currentBetIndex);
-       // Capture the live currency from the RGS session
+
+       // ── Capture the live currency from the RGS session ──
        setCurrency(stakeManager.currency ?? 'USD');
+
+       // ── configLoaded: RGS auth resolved — update bet levels from RGS config ──
+       stakeManager.on('configLoaded', (config: any) => {
+         if (config?.betLevels?.length > 0) {
+           console.info('[Gradiator] RGS config loaded — syncing bet levels:', config.betLevels);
+           setBetLevels((config.betLevels as number[]).map(fromMicroUnits));
+         }
+       });
        
        stakeManager.on('balanceUpdate', (newBal: number) => {
          setBalance(newBal);
        });
        
        stakeManager.on('betChanged', () => {
-          // Use manager index directly - avoids indexOf mismatch when
-          // RGS returns different bet levels than app's local BET_LEVELS
+          // Use manager index directly — avoids indexOf mismatch when
+          // RGS returns different bet levels than app's local defaults.
           setCurrentBetIndex(stakeManager.currentBetIndex);
        });
        
@@ -272,7 +296,7 @@ function App() {
          // Save event to allow round resumption like project2_ref
          await stakeManager.saveEvent(JSON.stringify({ state: 'spinning', featureBuy }));
          
-         const roundRes = playRes.round?.result as any;
+         const roundRes = playRes.round?.state as any;
          let mathResult: WinResult;
          
          // Server math
@@ -499,7 +523,7 @@ function App() {
             balance={balance}
             currentBet={currentBet}
             currency={currency}
-            betLevels={BET_LEVELS}
+            betLevels={betLevels}
             currentBetIndex={currentBetIndex}
             spinning={isSpinning}
             autoSpinEnabled={autoSpinEnabled}
@@ -595,7 +619,7 @@ function App() {
       <BetSelectionModal
         open={betSelectionOpen}
         onClose={() => setBetSelectionOpen(false)}
-        betLevels={BET_LEVELS}
+        betLevels={betLevels}
         currentBetIndex={currentBetIndex}
         currency={currency}
         onSelectBet={(index) => {
