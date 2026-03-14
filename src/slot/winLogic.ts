@@ -147,20 +147,18 @@ const calculateOnce = (
       firstNonWildIndex++;
     }
 
-    // Treat all-wilds line as symbol ID 9 (Football - highest payout)
-    const targetSymbolId = firstNonWildIndex === COLS ? 9 : symbols[firstNonWildIndex];
+    // Treat all-wilds line as symbol ID 11 (Football - highest payout)
+    const targetSymbolId = firstNonWildIndex === COLS ? 11 : symbols[firstNonWildIndex];
 
     if (targetSymbolId === SCATTER_ID) return;
 
     let match = 0;
     let hasWild = false;
     for (let i = 0; i < COLS; i++) {
-      // Only consider regular symbols (1-13, excluding 4 and 8)
-      if (symbols[i] > 13 || symbols[i] === SCATTER_ID || symbols[i] === WILD_ID) break;
-      if (targetSymbolId > 13 || targetSymbolId === SCATTER_ID || targetSymbolId === WILD_ID) continue;
-      if (symbols[i] === targetSymbolId || symbols[i] === WILD_ID) {
+      const currentSym = symbols[i];
+      if (currentSym === targetSymbolId || currentSym === WILD_ID) {
         match++;
-        if (symbols[i] === WILD_ID) hasWild = true;
+        if (currentSym === WILD_ID) hasWild = true;
       } else {
         break;
       }

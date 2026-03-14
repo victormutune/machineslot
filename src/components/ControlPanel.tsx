@@ -152,13 +152,15 @@ export default function SlotControlPanel({
                     role="button"
                     title="Select Bet Level"
                   >
-                    <button className='bg-[#1a1b1e]/10 border-green border-b-4 flex flex-col p-2'>
+                    <div className='relative bg-[#1a1b1e]/10 flex flex-col p-2 overflow-hidden'>
                       <span className="text-[8px] sm:text-[12px] text-yellow-500 font-extrabold tracking-widest leading-none mb-1">{t('BET')}</span>
                       <span className={`text-xl sm:text-xl font-black ${boostActive ? 'text-red-400' : 'text-white'} leading-none`}>
                           {formatBet(displayBet, cur)}
                       </span>
-                    </button>
-                    
+                      
+                      {/* Dynamic Indicator Line */}
+                      <div className="absolute bottom-0 left-0 h-[3px] bg-yellow-500 transition-all duration-300 ease-out" style={{ width: `${((currentBetIndex + 1) / betLevels.length) * 100}%` }}></div>
+                    </div>
                   </div>
                   <div className="flex flex-col gap-1 sm:gap-1.5">
                     <button

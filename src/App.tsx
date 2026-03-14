@@ -90,6 +90,7 @@ function App() {
   const bgMusicRef = useRef<HTMLAudioElement | null>(null);
   const spinStartAudioRef = useRef<HTMLAudioElement | null>(null);
   const spinStopAudioRef = useRef<HTMLAudioElement | null>(null);
+  const bonusTriggerAudioRef = useRef<HTMLAudioElement | null>(null);
   const audioInitializedRef = useRef(false);
 
   // Initialize Audio Elements
@@ -104,10 +105,14 @@ function App() {
     spinStopAudioRef.current = new Audio(ASSETS.audio.spinStop);
     spinStopAudioRef.current.volume = 0.7;
 
+    bonusTriggerAudioRef.current = new Audio(ASSETS.audio.bonusTrigger);
+    bonusTriggerAudioRef.current.volume = 0.8;
+
     return () => {
       bgMusicRef.current?.pause();
       spinStartAudioRef.current?.pause();
       spinStopAudioRef.current?.pause();
+      bonusTriggerAudioRef.current?.pause();
     };
   }, []);
 
@@ -124,6 +129,10 @@ function App() {
     if (spinStopAudioRef.current) {
       spinStopAudioRef.current.muted = isSoundMuted;
       spinStopAudioRef.current.volume = 0.7;
+    }
+    if (bonusTriggerAudioRef.current) {
+      bonusTriggerAudioRef.current.muted = isSoundMuted;
+      bonusTriggerAudioRef.current.volume = 0.8;
     }
   }, [isMusicMuted, isSoundMuted]);
 
@@ -410,6 +419,12 @@ function App() {
     if (wonFreeSpins > 0) {
       setLastFreeSpinsWon(wonFreeSpins);
       setFreeSpinsRemaining(prev => prev + wonFreeSpins);
+
+      // Play Bonus Trigger Sound
+      if (bonusTriggerAudioRef.current) {
+        bonusTriggerAudioRef.current.currentTime = 0;
+        bonusTriggerAudioRef.current.play().catch(console.error);
+      }
     }
 
     if (wonFreeSpins > 0) {
