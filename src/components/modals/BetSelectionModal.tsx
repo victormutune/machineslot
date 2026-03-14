@@ -55,7 +55,7 @@ export default function BetSelectionModal({
 
         {/* Content (Scrollable Grid) */}
         <div className="p-4 overflow-y-auto">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-4 gap-3">
             {betLevels.map((amount, index) => {
               const isSelected = index === currentBetIndex;
               return (

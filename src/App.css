@@ -56,9 +56,7 @@ body {
   }
 }
 
-/* Graffiti-style game title */
-
-.graffiti-title {
+/* Graffiti-style game title */.graffiti-title {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   text-transform: uppercase;
   letter-spacing: 0.25em;

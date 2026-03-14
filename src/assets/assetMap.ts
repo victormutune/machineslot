@@ -1,15 +1,15 @@
 // Symbols
 import symA from "./symbols/A_1.png";
 import symBoot from "./symbols/Boot.png";
-import symFlag from "./symbols/flag_1.png";
+import symFlag from "./symbols/FLAG.png";
 import symJ from "./symbols/J_1.png";
-import symK from "./symbols/K3.png";
-import symQ from "./symbols/Q2.png";
+import symK from "./symbols/K2.png";
+import symQ from "./symbols/Q_1.png";
 import symTrophy from "./symbols/trophy_1.png";
-import symWhistle from "./symbols/whistle_1.png";
+import symWhistle from "./symbols/Whistle.png";
 import symBonus from "./symbols/Bonus.png";
 import sym10 from "./symbols/1O.png";
-import symFootball from "./symbols/ball1.png";
+import symFootball from "./symbols/ball2.png";
 import symArmband from "./symbols/Armband_transparent.png";
 import symGloves from "./symbols/Gloves_transparent.png";
 
@@ -25,7 +25,7 @@ import bgMusic from "./mascot/lab_slots_bgm.mp3";
 import spinStartSound from "./mascot/spin_start.mp3";
 import spinStopSound from "./mascot/spin_stop.mp3";
 import bonusTriggerSound from "./mascot/bonus_sound.mp3";
-import afterVideo from "./mascot/after.mp4";
+
 
 // Mascot
 import mos1 from "./mascot/mos1.png";
@@ -205,7 +205,5 @@ export const ASSETS = {
     spinStop: spinStopSound,
     bonusTrigger: bonusTriggerSound
   },
-  video: {
-    afterBonus: afterVideo
-  }
+ 
 };

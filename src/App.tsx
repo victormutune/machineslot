@@ -3,7 +3,7 @@ import { ASSETS, REEL_STRIPS, BONUS_REEL_STRIPS } from './assets/assetMap';
 import SlotMachine, { type SlotMachineHandle } from './components/slot/SlotMachine';
 import ControlPanel from './components/ControlPanel';
 import GoldenFrame from './components/ui/GoldenFrame';
-import Mascot from './components/ui/Mascot';
+
 import BuyBonusModal, { type BuyBonusChoice } from './components/modals/BuyBonusModal';
 import AutoSpinModal from './components/modals/AutoSpinModal';
 import PayTableModal from './components/modals/PayTableModal';
@@ -513,7 +513,7 @@ function App() {
                 currency={currency}
               />
             </GoldenFrame>
-            <Mascot isWinning={!!winResult && winResult.totalWin > 0} />
+            
           </div>
         </div>
 
